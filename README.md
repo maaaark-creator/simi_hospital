@@ -13,7 +13,7 @@
 3. 根据麻醉知识库检索候选方案、药物和安全规则。
 4. 输出一个结构化的麻醉决策建议结果。
 
-它本质上是一个轻量级的决策支持链路，而不是完整的临床系统。
+
 
 ## 2. 主要想法
 
@@ -48,7 +48,7 @@
 ## 3. 文件结构
 
 ```text
-simi_hospital/
+simi_hospital/Anesthesia
 ├─ README.md
 ├─ LICENSE
 ├─ anesthesia_kb.json
