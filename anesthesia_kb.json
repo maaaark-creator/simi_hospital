@@ -1,0 +1,249 @@
+{
+  "metadata": {
+    "name": "anesthesia_reference_kb",
+    "schema_version": "0.1.0",
+    "language": "zh-CN",
+    "last_updated": "2026-04-03",
+    "status": "scaffold",
+    "intended_use": "education_and_reference_only",
+    "warning": "本库仅作为结构化参考示例，不能替代麻醉科医生的现场评估、设备条件、药品说明书和本院规范。",
+    "expansion_notes": [
+      "后续可继续补充更多药物、围术期风险规则、术式模板和并发症处理。",
+      "临床推断类内容建议单独标记 evidence_level，避免与官方标签事实混写。"
+    ]
+  },
+  "source_registry": {
+    "asa_physical_status": {
+      "title": "ASA Physical Status Classification System",
+      "organization": "American Society of Anesthesiologists",
+      "url": "https://www.asahq.org/standards-and-practice-parameters/statement-on-asa-physical-status-classification-system"
+    },
+    "asa_monitoring": {
+      "title": "Standards for Basic Anesthetic Monitoring",
+      "organization": "American Society of Anesthesiologists",
+      "url": "https://www.asahq.org/standards-and-practice-parameters/standards-for-basic-anesthetic-monitoring"
+    },
+    "asa_fasting": {
+      "title": "Practice Guidelines for Preoperative Fasting",
+      "organization": "American Society of Anesthesiologists",
+      "url": "https://www.asahq.org/standards-and-practice-parameters/practice-guidelines-for-preoperative-fasting"
+    },
+    "propofol_label": {
+      "title": "Propofol Injectable Emulsion",
+      "organization": "DailyMed",
+      "url": "https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=7b9599e0-5bad-742d-e053-2991aa0aee97"
+    },
+    "ketamine_label": {
+      "title": "Ketamine Hydrochloride Injection",
+      "organization": "DailyMed",
+      "url": "https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=267f0d0d-4fb8-4cdf-a826-df6800d4b2b6"
+    },
+    "rocuronium_label": {
+      "title": "Rocuronium Bromide Injection",
+      "organization": "DailyMed",
+      "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?query=rocuronium+bromide+injection"
+    },
+    "succinylcholine_label": {
+      "title": "Succinylcholine Chloride Injection",
+      "organization": "DailyMed",
+      "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?query=succinylcholine+chloride+injection"
+    }
+  },
+  "asa_physical_status": [
+    {
+      "id": "ASA_I",
+      "name_zh": "ASA I",
+      "definition_zh": "正常健康患者"
+    },
+    {
+      "id": "ASA_II",
+      "name_zh": "ASA II",
+      "definition_zh": "伴轻度系统性疾病患者"
+    },
+    {
+      "id": "ASA_III",
+      "name_zh": "ASA III",
+      "definition_zh": "伴重度系统性疾病患者"
+    },
+    {
+      "id": "ASA_IV",
+      "name_zh": "ASA IV",
+      "definition_zh": "伴持续威胁生命的重度系统性疾病患者"
+    },
+    {
+      "id": "ASA_V",
+      "name_zh": "ASA V",
+      "definition_zh": "若不手术预计无法存活的濒危患者"
+    },
+    {
+      "id": "ASA_VI",
+      "name_zh": "ASA VI",
+      "definition_zh": "已判定脑死亡、拟行器官获取的患者"
+    },
+    {
+      "id": "ASA_E",
+      "name_zh": "E 修饰符",
+      "definition_zh": "急诊状态修饰符，可附加在 ASA 分级后"
+    }
+  ],
+  "preop_rules": {
+    "fasting_reference": [
+      {
+        "item": "清流质",
+        "minimum_fasting_time": "2 小时",
+        "source_id": "asa_fasting"
+      },
+      {
+        "item": "轻餐",
+        "minimum_fasting_time": "6 小时",
+        "source_id": "asa_fasting"
+      },
+      {
+        "item": "油腻餐/肉类",
+        "minimum_fasting_time": "8 小时",
+        "source_id": "asa_fasting"
+      }
+    ],
+    "basic_monitoring": [
+      "氧合监测",
+      "通气监测",
+      "循环监测",
+      "体温监测（适用时）"
+    ]
+  },
+  "drugs": [
+    {
+      "id": "propofol",
+      "name_zh": "丙泊酚",
+      "class": "静脉麻醉诱导药",
+      "common_routes": ["IV"],
+      "common_uses": ["全麻诱导", "静脉镇静", "麻醉维持"],
+      "label_reference": {
+        "adult_induction_reference": "常见成人诱导参考剂量约 2-2.5 mg/kg IV，老年或 ASA III/IV 患者通常需要减量并缓慢滴定",
+        "contraindications": ["对丙泊酚或制剂成分超敏"],
+        "major_warnings": ["可能出现低血压", "可能出现呼吸抑制或呼吸暂停"]
+      },
+      "clinical_notes_inference": [
+        "常用于需要快速诱导和较快苏醒的场景",
+        "血流动力学脆弱患者应慎重选择并小剂量滴定"
+      ],
+      "source_ids": ["propofol_label"]
+    },
+    {
+      "id": "ketamine",
+      "name_zh": "氯胺酮",
+      "class": "解离性麻醉药",
+      "common_routes": ["IV", "IM"],
+      "common_uses": ["诱导", "短小操作镇静/镇痛", "特定场景下维持"],
+      "label_reference": {
+        "adult_induction_reference": "IV 常见参考范围约 1-4.5 mg/kg；实际需按目的与反应滴定",
+        "contraindications": ["当血压明显升高会构成严重危险时不宜使用"],
+        "major_warnings": ["可能出现精神反应", "需重视分泌物和气道反应"]
+      },
+      "clinical_notes_inference": [
+        "保留自主呼吸潜力较强，但并不等于无需气道准备",
+        "对低血压倾向患者有时更有优势，但仍需个体化判断"
+      ],
+      "source_ids": ["ketamine_label"]
+    },
+    {
+      "id": "rocuronium",
+      "name_zh": "罗库溴铵",
+      "class": "非去极化肌松药",
+      "common_routes": ["IV"],
+      "common_uses": ["气管插管", "术中肌松维持"],
+      "label_reference": {
+        "adult_intubation_reference": "常见插管参考剂量约 0.6 mg/kg IV",
+        "contraindications": ["对罗库溴铵或溴离子超敏"],
+        "major_warnings": ["必须具备人工通气和气道支持条件", "使用后需评估残余肌松"]
+      },
+      "clinical_notes_inference": [
+        "常作为 RSI 中琥珀胆碱的替代选项之一",
+        "术末需结合监测决定是否拮抗"
+      ],
+      "source_ids": ["rocuronium_label"]
+    },
+    {
+      "id": "succinylcholine",
+      "name_zh": "琥珀胆碱",
+      "class": "去极化肌松药",
+      "common_routes": ["IV", "IM"],
+      "common_uses": ["快速序贯诱导", "短时深度肌松"],
+      "label_reference": {
+        "adult_intubation_reference": "常见插管参考剂量约 1 mg/kg IV",
+        "contraindications": [
+          "恶性高热病史或易感",
+          "重大烧伤、多发创伤、广泛失神经等高钾风险状态",
+          "对药物成分超敏"
+        ],
+        "major_warnings": ["可致严重高钾血症", "可触发恶性高热"]
+      },
+      "clinical_notes_inference": [
+        "起效快、时程短，适合极短时间窗的插管需求",
+        "使用前必须先做高钾和恶性高热风险筛查"
+      ],
+      "source_ids": ["succinylcholine_label"]
+    }
+  ],
+  "anesthesia_plans": [
+    {
+      "id": "general_anesthesia_ett",
+      "name_zh": "全身麻醉-气管插管",
+      "typical_indications": ["需要明确气道保护", "刺激较强或时间较长手术", "需要完全不动"],
+      "core_steps": ["术前评估", "诱导", "气道建立", "维持", "苏醒/拔管"],
+      "candidate_drugs": {
+        "hypnotics": ["propofol", "ketamine"],
+        "neuromuscular_blockers": ["rocuronium", "succinylcholine"]
+      },
+      "required_monitoring": ["SpO2", "ECG", "无创或有创血压", "EtCO2", "体温（适用时）"],
+      "evidence_level": "institutional_template_inference"
+    },
+    {
+      "id": "spinal_anesthesia",
+      "name_zh": "椎管内麻醉-蛛网膜下腔麻醉",
+      "typical_indications": ["下腹部", "会阴部", "下肢手术"],
+      "key_checks": ["凝血状态", "感染情况", "患者配合与体位", "血流动力学准备"],
+      "required_monitoring": ["SpO2", "ECG", "血压"],
+      "evidence_level": "institutional_template_inference"
+    },
+    {
+      "id": "monitored_anesthesia_care",
+      "name_zh": "监测麻醉管理-MAC",
+      "typical_indications": ["短小操作", "局麻基础上的镇静", "需要麻醉科持续监测"],
+      "key_checks": ["是否随时可能转为全麻", "呼吸道风险", "镇静深度目标"],
+      "required_monitoring": ["SpO2", "ECG", "血压", "必要时 EtCO2"],
+      "evidence_level": "institutional_template_inference"
+    }
+  ],
+  "safety_rules": [
+    {
+      "id": "mh_trigger_avoidance",
+      "name_zh": "恶性高热触发药规避",
+      "if_patient_has": ["恶性高热病史", "恶性高热家族史", "已知易感"],
+      "avoid_drugs": ["succinylcholine"],
+      "notes": "本骨架版先只挂一个明确示例；后续可补充挥发性麻醉药。",
+      "source_ids": ["succinylcholine_label"]
+    },
+    {
+      "id": "aspiration_risk_review",
+      "name_zh": "误吸风险复核",
+      "if_patient_has": ["未满足禁食要求", "胃排空延迟", "肠梗阻或饱胃可能"],
+      "action": "升级气道保护与诱导方案评估，不应只依赖常规镇静流程",
+      "source_ids": ["asa_fasting"]
+    },
+    {
+      "id": "residual_blockade_review",
+      "name_zh": "残余肌松复核",
+      "if_drugs_used": ["rocuronium", "succinylcholine"],
+      "action": "术末需复核神经肌肉恢复情况，并结合监测决定拔管与拮抗策略",
+      "source_ids": ["rocuronium_label", "succinylcholine_label"]
+    }
+  ],
+  "placeholders_for_future": {
+    "contraindication_catalog": [],
+    "comorbidity_rules": [],
+    "procedure_templates": [],
+    "postop_events": [],
+    "drug_interactions": []
+  }
+}
