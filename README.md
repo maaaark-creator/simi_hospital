@@ -1,34 +1,159 @@
-# simi_hospital: Anesthesia Agent Demo
+# Anesthesia Agent
 
-一个面向麻醉场景的轻量级 Agent Demo，用于演示如何将患者信息结构化、映射到麻醉知识库、检索候选方案，并生成初步麻醉决策建议。
+一个面向麻醉场景的原型 Agent，用于演示患者信息结构化、知识库检索和麻醉方案建议生成的基础流程。
 
-该项目更适合作为教学、课程设计、原型验证或 Agent pipeline 示例，不应直接用于真实临床决策。
+当前版本定位为独立 Demo / 临时分支原型，目标是先把核心链路跑通，后续再与更大的系统进行集成与合并。
 
-## 1. 项目目标
+## 1. 模块定位
 
-本项目尝试搭建一个最小可运行的麻醉决策支持流程：
+`Anesthesia Agent` 负责围绕单个围术期患者，完成以下任务：
 
-1. 输入患者原始信息，可以是结构化字典，也可以是自然语言病例描述。
-2. 将患者信息标准化为统一字段。
-3. 将关键信息映射到麻醉知识库中的概念和规则。
-4. 检索候选麻醉方案、相关药物和安全规则。
-5. 输出一个可解释的初步麻醉建议。
+1. 接收原始患者信息。
+2. 将输入整理为统一的结构化患者画像。
+3. 根据麻醉知识库检索候选方案、药物和安全规则。
+4. 输出一个结构化的麻醉决策建议结果。
 
-整体上，这是一个典型的医疗 Agent Pipeline：
+它本质上是一个轻量级的决策支持链路，而不是完整的临床系统。
 
-`Patient Input -> Mapper Agent -> KB Retriever -> Decision Agent -> Structured Recommendation`
+## 2. 主要想法
 
-## 2. 核心功能
+当前 Agent 采用“规则标准化 + 知识库检索 + 决策输出”的分层设计。
 
-### 2.1 患者信息标准化
+### 2.1 设计目标
 
-由 [patient_mapper_agent.py](/d:/hemu_STU/BME/simi_hospital/patient_mapper_agent.py) 实现，支持：
+- 先把麻醉场景中的核心信息流打通。
+- 输出结构化结果，方便后续接前端、评测、接口层或主系统。
+- 保留一定可解释性，而不是只返回自由文本。
+- 在不依赖复杂工程框架的前提下，尽量清晰展示 Agent pipeline。
 
-- 将中文或英文别名字段统一映射到标准字段名。
-- 将原始患者字典转换为统一的 `normalized_profile`。
-- 支持年龄、性别、体重、手术名称、ASA 分级、合并症、禁食情况、气道评估、检验、生命体征等字段。
+### 2.2 基本流程
 
-标准化后的关键字段包括：
+整体流程如下：
+
+`Raw Patient Input -> Patient Mapper -> Knowledge Retriever -> Decision Agent -> Structured Output`
+
+其中：
+
+- `Patient Mapper` 负责患者信息标准化、文本结构化和实体归一化。
+- `Knowledge Retriever` 负责从麻醉知识库中召回候选方案、药物和规则。
+- `Decision Agent` 负责生成首选方案、备选方案、风险提示和解释信息。
+
+### 2.3 当前方法特点
+
+- 支持结构化输入和自然语言输入两条路径。
+- 兼容本地启发式决策与模型 API 决策两种模式。
+- 以 JSON 作为核心输入输出格式，便于后续系统集成。
+- 以知识库为中间层，避免把所有逻辑都写死在 prompt 或规则中。
+
+## 3. 文件结构
+
+```text
+simi_hospital/
+├─ README.md
+├─ LICENSE
+├─ anesthesia_kb.json
+├─ patient_mapper_agent.py
+├─ kb_retriever.py
+├─ anesthesia_decision_agent.py
+└─ run_anesthesia_pipeline_demo.py
+```
+
+各文件职责如下：
+
+- [README.md](/d:/hemu_STU/BME/simi_hospital/README.md)：当前模块说明文档。
+- [LICENSE](/d:/hemu_STU/BME/simi_hospital/LICENSE)：许可证文件。
+- [anesthesia_kb.json](/d:/hemu_STU/BME/simi_hospital/anesthesia_kb.json)：麻醉知识库，保存 ASA 分类、药物、麻醉方案和安全规则。
+- [patient_mapper_agent.py](/d:/hemu_STU/BME/simi_hospital/patient_mapper_agent.py)：患者输入标准化、病例结构化、实体归一化和知识库匹配逻辑。
+- [kb_retriever.py](/d:/hemu_STU/BME/simi_hospital/kb_retriever.py)：知识检索逻辑。
+- [anesthesia_decision_agent.py](/d:/hemu_STU/BME/simi_hospital/anesthesia_decision_agent.py)：麻醉决策逻辑。
+- [run_anesthesia_pipeline_demo.py](/d:/hemu_STU/BME/simi_hospital/run_anesthesia_pipeline_demo.py)：本地 demo 入口。
+
+## 4. 模块组成
+
+### 4.1 Patient Mapper
+
+主要职责：
+
+- 统一中英文患者字段。
+- 将原始输入转换为标准化 `normalized_profile`。
+- 可选调用外部模型 API，对自然语言病例做结构化抽取。
+- 可选调用外部模型 API，做医学实体归一化。
+
+核心接口：
+
+- `normalize_patient_input(raw_patient)`
+- `build_case_record(raw_patient)`
+- `build_case_record_from_text(raw_patient_text)`
+- `call_patient_structuring_api(raw_patient_text)`
+- `call_medical_entity_linking_api(normalized_patient)`
+
+### 4.2 Knowledge Retriever
+
+主要职责：
+
+- 映射 ASA 分类。
+- 推断候选麻醉方案。
+- 触发安全规则。
+- 汇总相关药物。
+- 标记当前病例缺失的信息。
+
+核心接口：
+
+- `retrieve(normalized_patient, entity_linking=None)`
+
+### 4.3 Decision Agent
+
+主要职责：
+
+- 从候选方案中选择首选方案。
+- 输出备选方案。
+- 标记风险提示。
+- 给出需要补充的信息。
+- 生成简要解释链路。
+
+核心接口：
+
+- `decide(normalized_patient, retrieval_result)`
+- `decide_with_api(normalized_patient, retrieval_result)`
+
+## 5. 输入
+
+当前 Agent 支持两类输入。
+
+### 5.1 结构化输入
+
+适用于本地 demo、测试用例和后续服务接口直接调用。
+
+示例：
+
+```json
+{
+  "年龄": 67,
+  "性别": "男",
+  "体重": 72,
+  "拟行手术": "下肢骨折内固定",
+  "ASA分级": "III",
+  "过敏史": "无",
+  "基础疾病": ["高血压", "糖尿病"],
+  "禁食情况": "已禁食 8 小时",
+  "气道评估": "张口尚可，暂未提示困难气道",
+  "急诊": "择期"
+}
+```
+
+### 5.2 自然语言输入
+
+适用于后续和上游问诊、病历摘要或多 Agent 系统对接。
+
+示例：
+
+```text
+患者，男，67岁，72kg。拟行下肢骨折内固定术。既往有高血压、糖尿病。ASA III级。已禁食8小时。气道评估暂未提示困难气道。过敏史无特殊。
+```
+
+### 5.3 标准化后的内部输入格式
+
+进入检索和决策模块前，输入会统一为如下字段：
 
 - `age`
 - `sex`
@@ -44,55 +169,24 @@
 - `urgency`
 - `labs`
 - `vitals`
+- `raw_input`
 
-### 2.2 文本病例结构化
+## 6. 输出
 
-`PatientProfileMapperAgent` 支持调用外部大模型 API，将自然语言病例描述抽取为 JSON：
+当前 Agent 的输出是结构化 JSON，便于日志记录、前端展示或后续接口集成。
 
-- `call_patient_structuring_api()`
+### 6.1 中间输出
 
-例如，可将“67岁男性，拟行下肢骨折内固定，ASA III，已禁食8小时……”转换成统一结构化字段。
+在完整 pipeline 中，会依次产生以下中间结果：
 
-### 2.3 医学实体归一化
+- `structured_patient`
+- `normalized_profile`
+- `entity_linking`
+- `retrieval_result`
 
-Mapper 还提供：
+### 6.2 最终输出
 
-- `call_medical_entity_linking_api()`
-
-该步骤用于把病例中的临床表达进一步整理为适合知识库检索的概念，例如：
-
-- 标准化术式关键词
-- 风险关键词
-- ASA 解释
-- 药物相关关键词
-
-### 2.4 知识库检索
-
-由 [kb_retriever.py](/d:/hemu_STU/BME/simi_hospital/kb_retriever.py) 实现，主要负责：
-
-- 根据 ASA 提示映射到知识库中的 ASA 分类
-- 根据术式、禁食情况、气道信息推断候选麻醉方案
-- 根据合并症和风险信息触发安全规则
-- 汇总相关药物
-- 识别病例中的缺失信息
-
-输出包括：
-
-- `asa_match`
-- `candidate_plans`
-- `matched_safety_rules`
-- `related_drugs`
-- `retrieval_notes`
-- `missing_information`
-
-### 2.5 麻醉方案决策
-
-由 [anesthesia_decision_agent.py](/d:/hemu_STU/BME/simi_hospital/anesthesia_decision_agent.py) 实现，支持两种模式：
-
-- `decide()`：基于本地启发式规则做决策
-- `decide_with_api()`：调用大模型生成最终 JSON 决策结果
-
-决策结果包含：
+决策模块最终返回的核心字段包括：
 
 - `patient_summary`
 - `primary_plan`
@@ -101,166 +195,78 @@ Mapper 还提供：
 - `need_more_info`
 - `reasoning_trace`
 
-## 3. 方法设计
+### 6.3 输出示例
 
-### 3.1 整体思路
-
-这个项目采用了“规则 + 知识库 + 大模型”的混合方法：
-
-- 规则负责最基础、最可控的字段标准化与条件判断。
-- 知识库负责承载麻醉方案、药物、安全规则等领域知识。
-- 大模型负责处理自然语言输入、实体归一化和更灵活的方案排序。
-
-这种设计的优点是：
-
-- 比纯大模型输出更可控
-- 比纯规则系统更灵活
-- 方便后续扩展更多知识条目和临床规则
-
-### 3.2 Pipeline 分层
-
-#### 第一层：输入映射层
-
-负责把用户输入转换为统一的患者画像：
-
-- 解决中英文字段名不一致的问题
-- 对列表类字段做清洗
-- 保留原始输入 `raw_input` 便于追溯
-
-#### 第二层：知识检索层
-
-负责把患者画像与知识库进行连接：
-
-- 匹配 ASA 分类
-- 推断候选麻醉方案
-- 触发安全规则
-- 收集候选药物
-
-#### 第三层：决策生成层
-
-负责从候选方案中选出首选方案，并给出解释：
-
-- 提炼患者摘要
-- 标注风险点
-- 给出备选方案
-- 指出仍需补充的信息
-
-### 3.3 当前决策逻辑示例
-
-项目中的本地启发式决策大致遵循以下思路：
-
-- 若存在误吸风险、未充分禁食或疑似困难气道，则优先考虑气管插管全麻。
-- 若手术部位偏向下肢、下腹、会阴等区域，则优先考虑椎管内麻醉。
-- 若为短小、表浅操作，则可考虑 MAC。
-- 若关键信息缺失，则在结果中显式提示补充信息。
-
-这部分目前是原型逻辑，适合演示 Agent 推理流程，不代表完整临床规范。
-
-## 4. 项目结构
-
-```text
-simi_hospital/Anesthesia
-├─ README.md
-├─ LICENSE
-├─ anesthesia_kb.json
-├─ patient_mapper_agent.py
-├─ kb_retriever.py
-├─ anesthesia_decision_agent.py
-└─ run_anesthesia_pipeline_demo.py
+```json
+{
+  "patient_summary": "67岁，男，拟行下肢骨折内固定，ASA III",
+  "primary_plan": {
+    "id": "spinal_anesthesia",
+    "name_zh": "椎管内麻醉"
+  },
+  "backup_plans": [
+    {
+      "id": "general_anesthesia_ett",
+      "name_zh": "全身麻醉-气管插管"
+    }
+  ],
+  "risk_flags": [
+    "存在基础疾病，需进一步评估"
+  ],
+  "need_more_info": [
+    "缺少身高信息",
+    "缺少实验室检查摘要"
+  ],
+  "reasoning_trace": [
+    "已参考术式信息",
+    "已纳入 ASA 提示"
+  ]
+}
 ```
 
-各文件职责如下：
+## 7. 依赖知识库
 
-- [anesthesia_kb.json](/d:/hemu_STU/BME/simi_hospital/anesthesia_kb.json)：麻醉知识库，包含 ASA 分类、药物、麻醉方案、安全规则等。
-- [patient_mapper_agent.py](/d:/hemu_STU/BME/simi_hospital/patient_mapper_agent.py)：患者信息标准化、文本结构化、实体归一化、知识库匹配。
-- [kb_retriever.py](/d:/hemu_STU/BME/simi_hospital/kb_retriever.py)：知识检索模块。
-- [anesthesia_decision_agent.py](/d:/hemu_STU/BME/simi_hospital/anesthesia_decision_agent.py)：麻醉决策模块。
-- [run_anesthesia_pipeline_demo.py](/d:/hemu_STU/BME/simi_hospital/run_anesthesia_pipeline_demo.py)：演示入口，串联完整 pipeline。
+当前 Agent 强依赖本地知识库文件 [anesthesia_kb.json](/d:/hemu_STU/BME/simi_hospital/anesthesia_kb.json)。
 
-## 5. 知识库设计
+### 7.1 知识库包含内容
 
-[anesthesia_kb.json](/d:/hemu_STU/BME/simi_hospital/anesthesia_kb.json) 目前包含以下几类内容：
+目前知识库主要包含以下几类信息：
 
-### 5.1 元数据
+- `metadata`
+- `source_registry`
+- `asa_physical_status`
+- `preop_rules`
+- `drugs`
+- `anesthesia_plans`
+- `safety_rules`
+- `placeholders_for_future`
 
-- 知识库名称
-- schema 版本
-- 语言
-- 更新时间
-- 使用场景说明
-- 安全警告
+### 7.2 当前知识库承担的作用
 
-### 5.2 参考来源注册表
+- 提供 ASA 分类映射目标。
+- 提供候选麻醉方案模板。
+- 提供药物条目与相关说明。
+- 提供安全规则和高风险提示条件。
+- 作为后续统一知识维护的入口。
 
-用于记录知识条目的外部参考来源，例如：
+### 7.3 当前知识库边界
 
-- ASA Physical Status Classification
-- Basic Anesthetic Monitoring
-- Preoperative Fasting Guidelines
-- 部分药品说明书来源
+当前知识库仍是原型级 scaffold，覆盖范围有限：
 
-### 5.3 ASA 分级
+- 药物数量较少。
+- 麻醉方案模板较少。
+- 安全规则仍偏示例性质。
+- 缺少更细的并发症、禁忌证、术前评估和围术期事件处理规则。
 
-包含：
+## 8. Demo 运行方式
 
-- `ASA_I` 到 `ASA_VI`
-- `ASA_E`
-
-### 5.4 术前规则
-
-目前包括：
-
-- 术前禁食参考
-- 基础监测要求
-
-### 5.5 药物条目
-
-当前示例药物包括：
-
-- `propofol`
-- `ketamine`
-- `rocuronium`
-- `succinylcholine`
-
-每个药物条目包含：
-
-- 中文名
-- 药物类别
-- 常用给药途径
-- 常见用途
-- 标签参考信息
-- 临床推断说明
-- 来源引用
-
-### 5.6 麻醉方案模板
-
-目前包含 3 个示例方案：
-
-- `general_anesthesia_ett`
-- `spinal_anesthesia`
-- `monitored_anesthesia_care`
-
-每个方案包括适应场景、关键步骤或检查项、监测要求、候选药物等。
-
-### 5.7 安全规则
-
-目前示例规则包括：
-
-- `mh_trigger_avoidance`
-- `aspiration_risk_review`
-- `residual_blockade_review`
-
-这些规则用于在检索和决策时标出高风险点。
-
-## 6. 运行方式
-
-### 6.1 环境要求
+### 8.1 环境要求
 
 - Python 3.10+
 
-当前代码主要依赖 Python 标准库，不依赖复杂第三方包。
+当前代码主要使用 Python 标准库。
 
-### 6.2 本地规则演示
+### 8.2 本地规则模式
 
 在项目目录下运行：
 
@@ -268,109 +274,143 @@ simi_hospital/Anesthesia
 python run_anesthesia_pipeline_demo.py --mode local --decision-mode heuristic
 ```
 
-含义：
+说明：
 
-- `--mode local`：使用本地字典作为患者输入
-- `--decision-mode heuristic`：使用本地启发式决策逻辑
+- `--mode local`：直接使用本地患者字典。
+- `--decision-mode heuristic`：使用本地启发式规则输出决策结果。
 
-### 6.3 API 演示
+适合：
+
+- 跑通最小 demo
+- 做课程展示
+- 做本地调试
+- 避免依赖外部 API
+
+### 8.3 API 模式
 
 ```bash
 python run_anesthesia_pipeline_demo.py --mode api --decision-mode api
 ```
 
-含义：
+说明：
 
-- `--mode api`：将自然语言病例交给大模型先做结构化
-- `--decision-mode api`：由大模型生成最终决策 JSON
+- `--mode api`：先将自然语言病例发送给模型 API 做结构化。
+- `--decision-mode api`：再由模型 API 生成最终决策输出。
+
+适合：
+
+- 演示自然语言输入链路
+- 验证模型增强流程
 
 注意：
 
-- 当前代码中 `patient_mapper_agent.py` 内置了 API 地址和若干模型配置。
-- 若外部 API 不可用，`api` 模式将无法运行。
-- 如果用于课程展示，建议优先使用 `local + heuristic`，可复现性更高。
+- 当前 API 地址和模型配置写在 [patient_mapper_agent.py](/d:/hemu_STU/BME/simi_hospital/patient_mapper_agent.py) 中。
+- 若外部模型服务不可用，则 `api` 模式无法运行。
 
-## 7. 输出示例
+## 9. 当前接口形态
 
-典型输出由三部分组成：
+当前分支中的接口主要是 Python 类方法，尚未封装为统一服务 API。
 
-### 7.1 标准化患者画像
+### 9.1 当前已具备的内部接口
 
-```json
-{
-  "age": 67,
-  "sex": "男",
-  "weight_kg": 72,
-  "procedure_name": "下肢骨折内固定",
-  "asa_hint": "III",
-  "comorbidities": ["高血压", "糖尿病"]
-}
-```
+- `PatientProfileMapperAgent.normalize_patient_input`
+- `PatientProfileMapperAgent.call_patient_structuring_api`
+- `PatientProfileMapperAgent.call_medical_entity_linking_api`
+- `KnowledgeRetriever.retrieve`
+- `AnesthesiaDecisionAgent.decide`
+- `AnesthesiaDecisionAgent.decide_with_api`
 
-### 7.2 检索结果
+### 9.2 当前 demo 串联入口
 
-```json
-{
-  "asa_match": "...",
-  "candidate_plans": ["..."],
-  "matched_safety_rules": ["..."],
-  "related_drugs": ["..."],
-  "missing_information": ["..."]
-}
-```
+- [run_anesthesia_pipeline_demo.py](/d:/hemu_STU/BME/simi_hospital/run_anesthesia_pipeline_demo.py)
 
-### 7.3 决策结果
+这个脚本负责串联：
 
-```json
-{
-  "patient_summary": "...",
-  "primary_plan": "...",
-  "backup_plans": ["..."],
-  "risk_flags": ["..."],
-  "need_more_info": ["..."],
-  "reasoning_trace": ["..."]
-}
-```
+1. 患者输入
+2. 结构化与映射
+3. 知识检索
+4. 决策输出
 
-## 8. 项目特点
+## 10. 后续待集成接口
 
-- 结构清晰，适合展示 Agent pipeline。
-- 同时支持规则路径和大模型路径。
-- 使用知识库承载领域知识，便于扩展。
-- 输出是结构化 JSON，适合后续接前端、评测或数据库。
-- 适合做课程作业、毕业设计原型或医疗 AI demo。
+由于当前只是临时 branch，后续建议在与主系统合并时重点补齐以下接口层。
 
-## 9. 当前局限
+### 10.1 上游输入接口
 
-目前这个项目仍然是原型版本，主要局限包括：
+建议预留：
 
-- 知识库规模较小，药物、规则和方案覆盖有限。
-- 检索逻辑主要基于关键词与启发式规则，尚未引入更强的语义检索。
-- 决策逻辑偏演示性质，未覆盖复杂临床场景。
-- 缺少系统化测试、评估集和错误分析流程。
-- 不应替代麻醉医生的临床判断和机构规范。
+- 病历摘要输入接口
+- 问诊 Agent 输出接入接口
+- HIS / EMR 结构化字段接入接口
+- 术前评估表单接入接口
 
-## 10. 可扩展方向
+### 10.2 下游输出接口
 
-后续可以从以下方向继续完善：
+建议预留：
 
-- 扩展更多手术场景、并发症和麻醉方案模板。
-- 增加禁忌证、药物相互作用、围术期事件处理规则。
-- 引入向量检索或 RAG，提高知识召回能力。
-- 增加病例评测集，对推荐结果做自动评估。
-- 接入前端页面，形成可交互的麻醉决策支持演示系统。
-- 增加日志、可解释性追踪和审计记录。
+- 标准 JSON 返回接口
+- 前端展示接口
+- 决策解释接口
+- 审计日志接口
+- 人工复核接口
 
-## 11. 免责声明
+### 10.3 知识库管理接口
 
-本项目仅用于教学、研究和原型演示。
+建议预留：
 
-其中的知识库、规则、药物信息和方案建议仅作为结构化参考示例，不能替代：
+- 知识库版本管理接口
+- 规则热更新接口
+- 药物条目更新接口
+- 手术模板扩展接口
 
-- 麻醉医生的现场评估
-- 医疗机构正式流程与规范
+### 10.4 模型服务接口
+
+建议预留：
+
+- 患者文本结构化接口
+- 实体归一化接口
+- 候选方案排序接口
+- 决策结果生成接口
+
+### 10.5 评测与监控接口
+
+建议预留：
+
+- 用例回放接口
+- 结果评测接口
+- 错误分析接口
+- 线上日志与告警接口
+
+## 11. 当前分支状态与合并建议
+
+当前模块适合作为一个独立可运行原型保留，后续合并时建议按以下方向整理：
+
+- 保留 `mapper / retriever / decision` 三层结构。
+- 将知识库路径、模型配置和 API 地址外置到配置文件或环境变量。
+- 增加统一的 service 层入口，而不是直接依赖 demo 脚本。
+- 增加标准 request / response schema。
+- 增加最小测试用例和样例输入输出。
+- 清理临时硬编码内容，尤其是模型配置与 API 相关信息。
+
+## 12. 已知限制
+
+当前版本仍然是原型，因此有以下限制：
+
+- 规则和知识覆盖有限。
+- 缺少统一服务化封装。
+- 缺少标准接口文档。
+- 缺少自动化测试。
+- 缺少完整异常处理与日志机制。
+- 不适合直接用于真实临床场景。
+
+## 13. 免责声明
+
+本项目仅用于教学、研究、课程设计和原型演示。
+
+当前知识库、规则和输出结果仅作为结构化参考示例，不能替代：
+
+- 麻醉医生的专业判断
+- 医疗机构正式规范
 - 官方指南与药品说明书
-- 真实临床中的个体化决策
-
-如需用于更严肃的医疗场景，必须补充临床审核、来源校验、权限控制、日志审计和安全合规设计。
+- 真实围术期场景中的个体化决策
 
