@@ -285,3 +285,58 @@
 
 
 
+
+---
+
+## 🧪 MDT 调度 Agent（API实现示例）
+
+仓库新增 `mdt_agent.py`，用于按病例自动决定会诊科室并调用对应 Agent API：
+
+- 必调：`麻醉科`（若未配置会直接报错）
+- 可调用：`心血管内科`、`心外科`、`神经内外科`、`普外科`、`骨科`
+- 决策会综合：主诉、既往史、家族史、身体情况、可能并发症、鉴别诊断等字段
+- 可自动读取 `knowledge/` 下所有 `.md/.txt/.json/.yaml/.yml` 资料，拼接进提示词供专科 Agent 比对
+
+### 1) 环境变量配置（接口模式同“麻醉 Agent 示例”）
+
+```bash
+export ANESTHESIOLOGY_AGENT_URL="https://your-host/anesthesiology"
+export ANESTHESIOLOGY_AGENT_KEY="your_key"
+
+export CARDIOLOGY_AGENT_URL="https://your-host/cardiology"
+export CARDIAC_SURGERY_AGENT_URL="https://your-host/cardiac-surgery"
+export NEURO_AGENT_URL="https://your-host/neuro"
+export GENERAL_SURGERY_AGENT_URL="https://your-host/general-surgery"
+export ORTHOPEDICS_AGENT_URL="https://your-host/orthopedics"
+```
+
+> 对应 KEY 变量可选：`*_AGENT_KEY`。
+
+### 2) 病例输入示例
+
+新建 `case.json`：
+
+```json
+{
+  "chief_complaint": "反复胸痛3月，加重1周",
+  "history_present_illness": "活动后胸闷胸痛，休息缓解，近一周夜间发作",
+  "past_medical_history": ["高血压10年", "2型糖尿病8年"],
+  "family_history": "父亲60岁时心梗",
+  "physical_exam": "血压160/95mmHg，双下肢轻度水肿",
+  "possible_complications": ["心衰", "围术期心肌缺血"],
+  "differential_diagnosis": ["冠心病", "主动脉夹层", "胃食管反流"]
+}
+```
+
+### 3) 运行
+
+```bash
+python mdt_agent.py --case-json case.json --knowledge-dir knowledge
+```
+
+输出会包含：
+
+- `departments_called`：实际调用科室（中文名）
+- `department_results`：每个科室的API返回
+- `mdt_summary`：MDT调度层汇总（含“麻醉科是否已调用”）
+

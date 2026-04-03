@@ -1,0 +1,9 @@
+{
+  "chief_complaint": "车祸后右下肢疼痛畸形伴胸闷",
+  "history_present_illness": "2小时前发生车祸，右大腿明显疼痛不能活动，伴呼吸急促",
+  "past_medical_history": ["高血压", "冠心病"],
+  "family_history": "母亲脑卒中病史",
+  "physical_exam": "右大腿肿胀压痛明显，血压150/92mmHg，心率110次/分",
+  "possible_complications": ["失血性休克", "脂肪栓塞", "围术期心肌缺血"],
+  "differential_diagnosis": ["股骨骨折", "骨盆骨折", "心源性胸闷"]
+}
