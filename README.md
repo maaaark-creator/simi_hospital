@@ -1,5 +1,6 @@
-# simi_hospital
-模拟医院课题（外科手术会诊）
+请运行main下的run_full_mdt_neurosurgery_demo进行测试！！！
+
+
 # simi_hospital
 模拟医院课题（外科手术会诊）
 
