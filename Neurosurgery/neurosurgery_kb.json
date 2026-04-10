@@ -1,0 +1,375 @@
+{
+  "metadata": {
+    "name": "neurosurgery_reference_kb",
+    "schema_version": "0.1.0",
+    "language": "zh-CN",
+    "last_updated": "2026-04-10",
+    "status": "prototype_reference",
+    "intended_use": "education_research_and_structured_demo_only",
+    "warning": "本知识库用于神经外科评估原型，不替代真实临床决策、院内规范和专科医生面诊。"
+  },
+  "source_registry": {
+    "asa_official": {
+      "title": "Statement on ASA Physical Status Classification System",
+      "organization": "American Society of Anesthesiologists",
+      "url": "https://www.asahq.org/standards-and-practice-parameters/statement-on-asa-physical-status-classification-system"
+    },
+    "acs_risk_about": {
+      "title": "About the ACS NSQIP Surgical Risk Calculator",
+      "organization": "American College of Surgeons",
+      "url": "https://riskcalculator.facs.org/RiskCalculator/about.html"
+    },
+    "acs_risk_home": {
+      "title": "ACS NSQIP Surgical Risk Calculator",
+      "organization": "American College of Surgeons",
+      "url": "https://riskcalculator.facs.org/RiskCalculator/index.jsp"
+    },
+    "nice_guidelines_portal": {
+      "title": "National Institute for Health and Care Excellence",
+      "organization": "NICE",
+      "url": "https://www.health-ni.gov.uk/topics/national-institute-health-and-care-excellence-nice"
+    },
+    "epilepsy_preop_consensus_2022": {
+      "title": "癫痫外科术前评估中国专家共识（2022版）",
+      "organization": "中华神经外科杂志",
+      "url": "https://medtion-image.medtion.com/uploads/1/file/public/202304/20230411170057_ftrak0uev7.pdf"
+    },
+    "ischemic_cerebrovascular_preop_consensus": {
+      "title": "中国缺血性脑血管病非急诊介入治疗术前评估专家共识",
+      "organization": "中华内科杂志",
+      "url": "https://icuguideline.com/wp-content/uploads/2023/02/%E4%B8%AD%E5%9B%BD%E7%BC%BA%E8%A1%80%E6%80%A7%E8%84%91%E8%A1%80%E7%AE%A1%E7%97%85%E9%9D%9E%E6%80%A5%E8%AF%8A%E4%BB%8B%E5%85%A5%E6%B2%BB%E7%96%97%E6%9C%AF%E5%89%8D%E8%AF%84%E4%BC%B0%E4%B8%93%E5%AE%B6%E5%85%B1%E8%AF%86.pdf"
+    },
+    "elderly_periop_consensus": {
+      "title": "老年患者围手术期管理北京协和医院专家共识",
+      "organization": "协和医学杂志",
+      "url": "https://xhyxzz.pumch.cn/cn/article/pdf/preview/10.3969/j.issn.1674-9081.2018.01.008.pdf"
+    },
+    "anesthesia_preop_consensus_2020": {
+      "title": "麻醉前访视和评估专家共识（2020版）",
+      "organization": "湘雅麻醉与重症医学网",
+      "url": "https://xyane2.csu.edu.cn/info/1083/2690.htm"
+    },
+    "surgical_safety_system": {
+      "title": "手术安全核查与手术风险评估制度",
+      "organization": "曲靖市中医医院",
+      "url": "https://www.qjzxyy.cn/arc/?id=1311"
+    }
+  },
+  "syndrome_catalog": [
+    {
+      "id": "drug_resistant_epilepsy",
+      "name_zh": "药物难治性癫痫/致痫灶外科评估",
+      "default_urgency": "expedited_specialist_workup",
+      "trigger_keywords": ["癫痫", "抽搐", "发作", "失神", "颞叶", "海马硬化", "药物难治", "脑电图", "视频脑电"],
+      "focus_points": ["发作类型与频率", "致痫灶定位是否一致", "既往抗癫痫药物使用是否充分", "认知语言与记忆功能基线"],
+      "recommended_collaborators": ["神经内科/癫痫中心", "神经电生理", "神经影像", "麻醉科"],
+      "recommended_workup_ids": ["video_eeg", "epilepsy_mri", "neuropsychology"],
+      "source_ids": ["epilepsy_preop_consensus_2022"]
+    },
+    {
+      "id": "intracranial_mass_effect",
+      "name_zh": "颅内占位/颅内压增高风险",
+      "default_urgency": "urgent_inpatient_review",
+      "trigger_keywords": ["颅内占位", "脑肿瘤", "占位", "头痛", "呕吐", "视乳头水肿", "中线移位", "脑水肿", "意识障碍"],
+      "focus_points": ["是否存在占位效应或脑疝风险", "症状进展速度", "病灶位置与功能区关系", "激素、脱水和气道管理风险"],
+      "recommended_collaborators": ["神经影像", "麻醉科", "重症医学科"],
+      "recommended_workup_ids": ["brain_mri_contrast", "mass_effect_review"],
+      "source_ids": ["nice_guidelines_portal", "anesthesia_preop_consensus_2020", "surgical_safety_system"]
+    },
+    {
+      "id": "ischemic_cerebrovascular_pathway",
+      "name_zh": "缺血性脑血管病/血运重建路径评估",
+      "default_urgency": "expedited_specialist_workup",
+      "trigger_keywords": ["tia", "短暂性脑缺血发作", "脑梗死", "脑卒中", "颈动脉狭窄", "大脑中动脉", "缺血", "再狭窄"],
+      "focus_points": ["近期缺血事件时间窗", "血管解剖和狭窄程度", "药物治疗是否充分", "围手术期出血与再梗风险平衡"],
+      "recommended_collaborators": ["神经内科", "神经介入/血管组", "麻醉科"],
+      "recommended_workup_ids": ["vascular_imaging", "antithrombotic_review"],
+      "source_ids": ["ischemic_cerebrovascular_preop_consensus"]
+    },
+    {
+      "id": "hydrocephalus_csf_disorder",
+      "name_zh": "脑积水/脑脊液循环障碍",
+      "default_urgency": "expedited_specialist_workup",
+      "trigger_keywords": ["脑积水", "脑室扩大", "步态不稳", "尿失禁", "认知下降", "分流管", "分流术后", "脑脊液"],
+      "focus_points": ["症状与影像是否一致", "是否存在分流管功能障碍或感染", "急慢性脑积水鉴别", "步态、认知和尿控变化趋势"],
+      "recommended_collaborators": ["神经内科", "影像科", "麻醉科"],
+      "recommended_workup_ids": ["brain_mri_contrast", "shunt_infection_review"],
+      "source_ids": ["nice_guidelines_portal", "elderly_periop_consensus"]
+    },
+    {
+      "id": "spinal_cord_or_cauda_compression",
+      "name_zh": "脊髓/马尾压迫风险",
+      "default_urgency": "urgent_inpatient_review",
+      "trigger_keywords": ["脊髓压迫", "马尾", "尿潴留", "鞍区感觉减退", "四肢无力", "病理征", "截瘫", "瘫痪", "脊柱肿瘤"],
+      "focus_points": ["运动感觉与括约肌功能", "压迫平面与病变范围", "是否进展性神经功能恶化", "抗凝与围术期出血管理"],
+      "recommended_collaborators": ["脊柱外科/骨科", "麻醉科", "重症医学科"],
+      "recommended_workup_ids": ["spine_mri", "antithrombotic_review"],
+      "source_ids": ["nice_guidelines_portal", "surgical_safety_system"]
+    },
+    {
+      "id": "intracranial_bleeding_or_trauma",
+      "name_zh": "颅脑外伤/颅内出血高风险情境",
+      "default_urgency": "immediate_emergency",
+      "trigger_keywords": ["头部外伤", "颅内出血", "硬膜下", "硬膜外", "蛛网膜下腔出血", "意识下降", "瞳孔不等大", "抗凝"],
+      "focus_points": ["是否需要急诊影像与减压", "抗栓药物逆转与凝血状态", "气道保护和血流动力学稳定", "继发性脑损伤预防"],
+      "recommended_collaborators": ["急诊科", "麻醉科", "重症医学科"],
+      "recommended_workup_ids": ["coagulation_review", "mass_effect_review"],
+      "source_ids": ["surgical_safety_system", "anesthesia_preop_consensus_2020"]
+    }
+  ],
+  "red_flag_rules": [
+    {
+      "id": "altered_consciousness_or_herniation",
+      "name_zh": "意识恶化/脑疝风险征象",
+      "severity": "high",
+      "if_any_keywords": ["意识障碍", "嗜睡", "昏迷", "瞳孔不等大", "喷射性呕吐", "呼吸不规则", "脑疝"],
+      "rationale_zh": "提示可能存在急性颅内压危象，需要立即神经外科评估。",
+      "immediate_actions": ["立即急诊神经外科评估", "优先复核头颅影像和生命支持"],
+      "source_ids": ["surgical_safety_system", "anesthesia_preop_consensus_2020"]
+    },
+    {
+      "id": "progressive_focal_deficit",
+      "name_zh": "进行性局灶神经功能缺损",
+      "severity": "high",
+      "if_any_keywords": ["进行性无力", "偏瘫", "失语", "视野缺损", "步态恶化", "新发病理征"],
+      "rationale_zh": "提示病灶进展、压迫或血管事件，需要尽快明确病因和时效性。",
+      "immediate_actions": ["尽快完善神经影像", "结合病程判断是否需住院加速评估"],
+      "source_ids": ["ischemic_cerebrovascular_preop_consensus", "nice_guidelines_portal"]
+    },
+    {
+      "id": "seizure_escalation",
+      "name_zh": "癫痫发作升级或控制不佳",
+      "severity": "medium",
+      "if_any_keywords": ["频繁发作", "丛集发作", "难治性癫痫", "跌倒发作", "状态发作", "停药后复发"],
+      "rationale_zh": "提示需要重新评估药物依从性、致痫灶定位和手术时机。",
+      "immediate_actions": ["核对抗癫痫药物方案", "加速视频脑电和定位评估"],
+      "source_ids": ["epilepsy_preop_consensus_2022"]
+    },
+    {
+      "id": "cauda_equina_red_flag",
+      "name_zh": "马尾综合征红旗表现",
+      "severity": "high",
+      "if_any_keywords": ["尿潴留", "鞍区感觉减退", "双下肢无力", "大小便功能障碍"],
+      "rationale_zh": "提示可能存在马尾综合征，应尽快行急诊影像和外科评估。",
+      "immediate_actions": ["尽快完成靶向脊柱MRI", "避免延误减压时机"],
+      "source_ids": ["nice_guidelines_portal", "surgical_safety_system"]
+    }
+  ],
+  "perioperative_risk_rules": [
+    {
+      "id": "elderly_frailty_delirium_risk",
+      "name_zh": "高龄/衰弱/谵妄风险",
+      "severity": "medium",
+      "min_age": 70,
+      "if_any_keywords": ["衰弱", "认知下降", "步态不稳", "营养不良", "谵妄", "跌倒"],
+      "minimum_matches": 0,
+      "perioperative_focus": ["完善功能和认知基线", "警惕术后谵妄和肺部并发症", "评估康复与照护能力"],
+      "rationale_zh": "老年和衰弱患者神经外科围术期风险更高，需要更细化的综合评估。",
+      "source_ids": ["elderly_periop_consensus"]
+    },
+    {
+      "id": "antithrombotic_bleeding_risk",
+      "name_zh": "抗栓药物与神经外科出血风险",
+      "severity": "high",
+      "if_any_keywords": ["阿司匹林", "氯吡格雷", "华法林", "利伐沙班", "阿哌沙班", "双联抗血小板", "抗凝"],
+      "minimum_matches": 1,
+      "perioperative_focus": ["核对最后一次用药时间", "结合病种平衡再梗与出血风险", "必要时评估逆转或桥接策略"],
+      "rationale_zh": "神经外科对出血高度敏感，抗栓药物管理需要个体化审慎决策。",
+      "source_ids": ["ischemic_cerebrovascular_preop_consensus", "anesthesia_preop_consensus_2020"]
+    },
+    {
+      "id": "raised_icp_airway_hemodynamic_risk",
+      "name_zh": "颅内压增高与麻醉气道血流动力学风险",
+      "severity": "high",
+      "if_any_keywords": ["颅压高", "脑疝", "脑水肿", "中线移位", "喷射性呕吐", "意识障碍"],
+      "minimum_matches": 1,
+      "perioperative_focus": ["优先保障气道与通气", "避免明显低氧低血压", "警惕诱导和体位变化导致脑灌注恶化"],
+      "rationale_zh": "颅内压增高病例围麻醉和围手术期失代偿风险高。",
+      "source_ids": ["anesthesia_preop_consensus_2020", "surgical_safety_system"]
+    },
+    {
+      "id": "epilepsy_medication_withdrawal_risk",
+      "name_zh": "抗癫痫药中断与围术期发作风险",
+      "severity": "medium",
+      "if_any_keywords": ["癫痫", "抽搐", "抗癫痫药", "漏服", "停药"],
+      "minimum_matches": 1,
+      "perioperative_focus": ["核对长期药物依从性", "避免围术期不必要停药", "规划发作监测和应急预案"],
+      "rationale_zh": "药物中断可增加围术期癫痫发作与误吸、损伤风险。",
+      "source_ids": ["epilepsy_preop_consensus_2022", "anesthesia_preop_consensus_2020"]
+    }
+  ],
+  "differential_templates": [
+    {
+      "symptom_cluster": "头痛/呕吐/视物模糊/意识改变",
+      "if_any_keywords": ["头痛", "呕吐", "视物模糊", "意识障碍", "视乳头水肿"],
+      "minimum_matches": 1,
+      "possible_causes": ["颅内占位及占位效应", "脑积水或脑脊液循环障碍", "颅内出血", "感染性病变或严重偏头痛"],
+      "related_tests": ["头颅CT或MRI", "眼底/神经查体", "必要时住院监测"]
+    },
+    {
+      "symptom_cluster": "癫痫发作/短暂意识异常/局灶症状",
+      "if_any_keywords": ["癫痫", "抽搐", "发作", "意识丧失", "自动症", "肢体抽动"],
+      "minimum_matches": 1,
+      "possible_causes": ["局灶性癫痫", "脑肿瘤相关发作", "脑血管畸形", "代谢/药物相关事件"],
+      "related_tests": ["视频脑电", "癫痫协议MRI", "药物史核对"]
+    },
+    {
+      "symptom_cluster": "短暂局灶性神经功能缺损",
+      "if_any_keywords": ["tia", "短暂性脑缺血发作", "失语", "偏瘫", "一过性黑矇"],
+      "minimum_matches": 1,
+      "possible_causes": ["TIA或缺血性卒中", "癫痫后Todd麻痹", "颅内占位或血管病", "低灌注相关事件"],
+      "related_tests": ["CTA/MRA/DSA", "MRI-DWI", "心血管危险因素复核"]
+    },
+    {
+      "symptom_cluster": "背痛/肢体无力/尿潴留",
+      "if_any_keywords": ["背痛", "肢体无力", "尿潴留", "鞍区感觉减退", "步态障碍"],
+      "minimum_matches": 1,
+      "possible_causes": ["脊髓压迫", "马尾综合征", "脊柱肿瘤", "硬膜外血肿或感染"],
+      "related_tests": ["靶向脊柱MRI", "完整运动感觉与括约肌评估"]
+    }
+  ],
+  "workup_templates": [
+    {
+      "id": "video_eeg",
+      "name_zh": "长程视频脑电监测",
+      "if_any_keywords": ["癫痫", "抽搐", "发作", "难治性癫痫", "脑电图"],
+      "minimum_matches": 1,
+      "priority": "high",
+      "rationale_zh": "术前需明确发作类型、致痫灶定位及电临床一致性。",
+      "source_ids": ["epilepsy_preop_consensus_2022"]
+    },
+    {
+      "id": "epilepsy_mri",
+      "name_zh": "癫痫协议MRI",
+      "if_any_keywords": ["癫痫", "海马硬化", "致痫灶", "颞叶"],
+      "minimum_matches": 1,
+      "priority": "high",
+      "rationale_zh": "高质量MRI有助于识别结构性病灶及与电生理结果对照。",
+      "source_ids": ["epilepsy_preop_consensus_2022"]
+    },
+    {
+      "id": "neuropsychology",
+      "name_zh": "神经心理与语言记忆评估",
+      "if_any_keywords": ["癫痫", "颞叶", "记忆下降", "语言功能"],
+      "minimum_matches": 1,
+      "priority": "medium",
+      "rationale_zh": "对功能区相关手术需评估认知、语言和术后功能风险。",
+      "source_ids": ["epilepsy_preop_consensus_2022"]
+    },
+    {
+      "id": "brain_mri_contrast",
+      "name_zh": "头颅MRI增强及功能区关系评估",
+      "if_any_keywords": ["脑肿瘤", "颅内占位", "脑积水", "脑室扩大", "头痛", "视乳头水肿"],
+      "minimum_matches": 1,
+      "priority": "high",
+      "rationale_zh": "用于明确病变范围、占位效应和邻近重要结构。",
+      "source_ids": ["nice_guidelines_portal", "surgical_safety_system"]
+    },
+    {
+      "id": "mass_effect_review",
+      "name_zh": "占位效应与颅内压风险复核",
+      "if_any_keywords": ["意识障碍", "中线移位", "脑水肿", "喷射性呕吐", "脑疝"],
+      "minimum_matches": 1,
+      "priority": "high",
+      "rationale_zh": "需优先评估是否存在急诊减压或先期稳定的需要。",
+      "source_ids": ["surgical_safety_system", "anesthesia_preop_consensus_2020"]
+    },
+    {
+      "id": "vascular_imaging",
+      "name_zh": "脑血管成像与血流动力学评估",
+      "if_any_keywords": ["tia", "脑梗死", "颈动脉狭窄", "缺血", "再狭窄"],
+      "minimum_matches": 1,
+      "priority": "high",
+      "rationale_zh": "非急诊血运重建前需明确解剖、狭窄程度和适应证。",
+      "source_ids": ["ischemic_cerebrovascular_preop_consensus"]
+    },
+    {
+      "id": "antithrombotic_review",
+      "name_zh": "抗栓药与凝血功能复核",
+      "if_any_keywords": ["阿司匹林", "氯吡格雷", "华法林", "利伐沙班", "阿哌沙班", "抗凝"],
+      "minimum_matches": 1,
+      "priority": "high",
+      "rationale_zh": "神经外科对出血敏感，需提前完成药物时程与凝血状态复核。",
+      "source_ids": ["ischemic_cerebrovascular_preop_consensus", "anesthesia_preop_consensus_2020"]
+    },
+    {
+      "id": "spine_mri",
+      "name_zh": "靶向脊柱MRI",
+      "if_any_keywords": ["脊髓压迫", "马尾", "尿潴留", "鞍区感觉减退", "截瘫", "背痛"],
+      "minimum_matches": 1,
+      "priority": "high",
+      "rationale_zh": "用于明确压迫节段、病变性质和减压时效性。",
+      "source_ids": ["nice_guidelines_portal", "surgical_safety_system"]
+    },
+    {
+      "id": "coagulation_review",
+      "name_zh": "凝血状态与逆转策略评估",
+      "if_any_keywords": ["颅内出血", "头部外伤", "抗凝", "凝血异常"],
+      "minimum_matches": 1,
+      "priority": "high",
+      "rationale_zh": "急性颅脑事件下需迅速明确凝血状态和可逆因素。",
+      "source_ids": ["anesthesia_preop_consensus_2020", "surgical_safety_system"]
+    },
+    {
+      "id": "shunt_infection_review",
+      "name_zh": "分流装置功能与感染评估",
+      "if_any_keywords": ["分流管", "发热", "脑积水", "分流术后", "伤口红肿"],
+      "minimum_matches": 1,
+      "priority": "medium",
+      "rationale_zh": "需区分分流障碍、感染与原发病进展。",
+      "source_ids": ["nice_guidelines_portal", "surgical_safety_system"]
+    }
+  ],
+  "complication_watchlist_rules": [
+    {
+      "id": "watch_seizure",
+      "name_zh": "需警惕围术期癫痫相关并发症",
+      "if_any_keywords": ["癫痫", "抽搐", "发作", "停药"],
+      "triggered_by_risk_rule_ids": ["epilepsy_medication_withdrawal_risk"],
+      "complications": ["围术期癫痫发作", "误吸或跌倒损伤", "术后意识恢复延迟"],
+      "reason_zh": "发作控制不佳或用药中断会增加围术期事件风险。"
+    },
+    {
+      "id": "watch_brain_herniation",
+      "name_zh": "需警惕脑水肿/脑疝/灌注恶化",
+      "if_any_keywords": ["脑水肿", "中线移位", "意识障碍", "脑疝", "喷射性呕吐"],
+      "triggered_by_risk_rule_ids": ["raised_icp_airway_hemodynamic_risk"],
+      "complications": ["脑疝进展", "低灌注继发损伤", "气道与通气失败"],
+      "reason_zh": "颅内压增高病例在围麻醉和体位转换时易失代偿。"
+    },
+    {
+      "id": "watch_ischemic_or_hemorrhagic_event",
+      "name_zh": "需警惕脑缺血/再出血事件",
+      "if_any_keywords": ["tia", "脑梗死", "颈动脉狭窄", "颅内出血", "抗凝"],
+      "triggered_by_risk_rule_ids": ["antithrombotic_bleeding_risk"],
+      "complications": ["围术期卒中复发", "术野或颅内出血", "高灌注或低灌注损伤"],
+      "reason_zh": "血栓与出血风险在神经外科病例中常同时存在。"
+    },
+    {
+      "id": "watch_delirium_frailty",
+      "name_zh": "需警惕老年衰弱相关并发症",
+      "if_any_keywords": ["高龄", "衰弱", "认知下降", "跌倒", "营养不良"],
+      "triggered_by_risk_rule_ids": ["elderly_frailty_delirium_risk"],
+      "complications": ["术后谵妄", "肺部感染", "功能退化和康复延迟"],
+      "reason_zh": "高龄衰弱患者更易出现认知和功能性并发症。"
+    }
+  ],
+  "external_tools": [
+    {
+      "id": "asa_reference",
+      "name_zh": "ASA 分级参考（人工查看）",
+      "recommended_for_surgical_cases": true,
+      "url": "https://www.asahq.org/standards-and-practice-parameters/statement-on-asa-physical-status-classification-system",
+      "usage_note_zh": "用于统一术前全身状态分层，不代替专科判断。",
+      "source_ids": ["asa_official"]
+    },
+    {
+      "id": "acs_nsqip_manual",
+      "name_zh": "ACS NSQIP 手术风险计算器（人工打开）",
+      "recommended_for_surgical_cases": true,
+      "url": "https://riskcalculator.facs.org/RiskCalculator/index.jsp",
+      "usage_note_zh": "用于医生在原站点手工录入，辅助围术期沟通，不在本模块内自动集成计算。",
+      "source_ids": ["acs_risk_home", "acs_risk_about"]
+    }
+  ]
+}
