@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MDT Chat v2</title>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --panel: #ffffff;
+      --line: #d0d7de;
+      --text: #111827;
+      --muted: #6b7280;
+      --user: #0b57d0;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: radial-gradient(circle at 20% 0%, #ebf1ff 0, #f8fbff 40%, var(--bg) 100%);
+      color: var(--text);
+    }
+    .app { max-width: 1260px; margin: 0 auto; padding: 18px; display: grid; gap: 14px; grid-template-columns: 1fr 420px; }
+    .chat, .side {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      min-height: 80vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .head {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-weight: 700;
+    }
+    .messages {
+      flex: 1;
+      overflow: auto;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .msg {
+      max-width: 88%;
+      border-radius: 14px;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      white-space: pre-wrap;
+      line-height: 1.5;
+      word-break: break-word;
+      font-size: 14px;
+    }
+    .msg.user { align-self: flex-end; background: #eaf1ff; border-color: #c9dbff; }
+    .msg.assistant { align-self: flex-start; background: #fff; }
+    .msg.system { align-self: center; color: var(--muted); background: #f9fafb; font-size: 12px; }
+    .composer { border-top: 1px solid var(--line); padding: 12px; display: grid; gap: 10px; }
+    textarea {
+      width: 100%;
+      min-height: 110px;
+      resize: vertical;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px;
+      font-size: 14px;
+      font-family: inherit;
+    }
+    .actions { display: flex; gap: 8px; justify-content: space-between; align-items: center; }
+    .btn {
+      border: 1px solid #b8c2cc;
+      background: white;
+      border-radius: 9px;
+      padding: 8px 12px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .btn.primary { background: var(--user); color: #fff; border-color: var(--user); }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .chip {
+      border: 1px solid #dae1e8;
+      border-radius: 999px;
+      padding: 3px 8px;
+      font-size: 12px;
+      color: #334155;
+      background: #f8fafc;
+    }
+    .side-body { padding: 12px; overflow: auto; display: flex; flex-direction: column; gap: 10px; }
+    .side-block { border: 1px solid var(--line); border-radius: 10px; padding: 8px; background: #fcfdff; }
+    .side-title { font-weight: 700; font-size: 13px; margin-bottom: 6px; }
+    .progress-list { display: flex; flex-direction: column; gap: 6px; max-height: 320px; overflow: auto; }
+    .evt {
+      border: 1px solid #e5e9ef;
+      border-radius: 8px;
+      padding: 6px 8px;
+      font-size: 12px;
+      background: #fff;
+    }
+    .evt.start { border-left: 3px solid #b26a00; }
+    .evt.done { border-left: 3px solid #188038; }
+    .evt.error { border-left: 3px solid #b00020; }
+    details { border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; background: #fcfdff; }
+    details summary { cursor: pointer; font-weight: 600; font-size: 13px; }
+    pre {
+      margin: 8px 0 0;
+      max-height: 260px;
+      overflow: auto;
+      background: #0f172a;
+      color: #dbe7ff;
+      border-radius: 8px;
+      padding: 10px;
+      font-size: 12px;
+      line-height: 1.4;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    @media (max-width: 980px) { .app { grid-template-columns: 1fr; } .chat, .side { min-height: auto; } }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <section class="chat">
+      <div class="head">
+        <span>MDT Chat</span>
+        <span id="status" class="chip">Ready</span>
+      </div>
+      <div id="messages" class="messages">
+        <div class="msg system">把病例文字发给我，我会调用 MDT 全流程并返回结构化建议。你会实时看到每一步进度。</div>
+      </div>
+      <div class="composer">
+        <textarea id="input" placeholder="例如：患者男，58岁，近2周进行性头痛伴恶心..."></textarea>
+        <div class="actions">
+          <div class="row">
+            <label class="chip"><input type="checkbox" id="api_mdt" checked /> API分诊</label>
+            <label class="chip"><input type="checkbox" id="api_specialists" checked /> API专科</label>
+            <label class="chip"><input type="checkbox" id="api_final" checked /> API最终整合</label>
+          </div>
+          <button id="send" class="btn primary">发送</button>
+        </div>
+      </div>
+    </section>
+
+    <aside class="side">
+      <div class="head">流程输出</div>
+      <div class="side-body">
+        <div class="side-block">
+          <div class="side-title">实时进度</div>
+          <div id="progressList" class="progress-list">
+            <div class="chip">等待一次会话结果</div>
+          </div>
+        </div>
+        <div id="sectionContainer"></div>
+      </div>
+    </aside>
+  </div>
+
+  <script>
+    const messages = document.getElementById("messages");
+    const input = document.getElementById("input");
+    const send = document.getElementById("send");
+    const statusEl = document.getElementById("status");
+    const progressList = document.getElementById("progressList");
+    const sectionContainer = document.getElementById("sectionContainer");
+
+    function addMessage(role, text) {
+      const el = document.createElement("div");
+      el.className = `msg ${role}`;
+      el.textContent = text;
+      messages.appendChild(el);
+      messages.scrollTop = messages.scrollHeight;
+      return el;
+    }
+
+    function fmt(obj) {
+      try { return JSON.stringify(obj, null, 2); } catch { return String(obj); }
+    }
+
+    function appendProgressEvent(ev) {
+      if (!ev) return;
+      const row = document.createElement("div");
+      row.className = `evt ${ev.type || "system"}`;
+      if (ev.type === "start") {
+        row.textContent = `[START] ${ev.label || ""}`;
+      } else if (ev.type === "done") {
+        row.textContent = `[DONE ] ${ev.label || ""} -> ${ev.duration_seconds || 0}s`;
+      } else if (ev.type === "error") {
+        row.textContent = `[ERROR] ${ev.message || ev.label || ""}`;
+      } else {
+        row.textContent = `[INFO ] ${ev.message || ev.label || ""}`;
+      }
+      progressList.appendChild(row);
+      progressList.scrollTop = progressList.scrollHeight;
+    }
+
+    function renderWorkflowSections(workflowData) {
+      sectionContainer.innerHTML = "";
+      const sections = [
+        ["initial_triage", "首轮分诊"],
+        ["specialty_opinions", "专科输出"],
+        ["uncertainty_review", "不确定性汇总"],
+        ["mdt_follow_up", "二次追问"],
+        ["head_doctor_recommendation", "最终结论"],
+      ];
+      sections.forEach(([key, label]) => {
+        const d = document.createElement("details");
+        if (key === "head_doctor_recommendation") d.open = true;
+        const s = document.createElement("summary");
+        s.textContent = label;
+        const p = document.createElement("pre");
+        p.textContent = fmt(workflowData?.[key] ?? null);
+        d.appendChild(s);
+        d.appendChild(p);
+        sectionContainer.appendChild(d);
+      });
+    }
+
+    async function pollJob(jobId, pendingEl) {
+      let cursor = 0;
+      while (true) {
+        const resp = await fetch(`/api/job?job_id=${encodeURIComponent(jobId)}`);
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data.error || `HTTP ${resp.status}`);
+
+        const events = Array.isArray(data.events) ? data.events : [];
+        while (cursor < events.length) {
+          const ev = events[cursor++];
+          appendProgressEvent(ev);
+          if (ev.type === "start") addMessage("system", `[START] ${ev.label || ""}`);
+          if (ev.type === "done") addMessage("system", `[DONE ] ${ev.label || ""} -> ${ev.duration_seconds || 0}s`);
+        }
+
+        if (data.status === "done") {
+          pendingEl.remove();
+          addMessage("assistant", data.reply || "已完成，但未返回回复文本。");
+          renderWorkflowSections(data.workflow || {});
+          return;
+        }
+        if (data.status === "error") {
+          pendingEl.remove();
+          addMessage("assistant", `请求失败：${data.error || "unknown error"}`);
+          return;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      }
+    }
+
+    async function submit() {
+      const message = input.value.trim();
+      if (!message) return;
+      input.value = "";
+      addMessage("user", message);
+      const pending = addMessage("assistant", "处理中，请稍候...");
+
+      send.disabled = true;
+      statusEl.textContent = "Running";
+      statusEl.style.background = "#fff7e6";
+      statusEl.style.borderColor = "#f4d8a7";
+      progressList.innerHTML = "";
+      sectionContainer.innerHTML = "";
+
+      const payload = {
+        message,
+        use_api_for_mdt: document.getElementById("api_mdt").checked,
+        use_api_for_specialists: document.getElementById("api_specialists").checked,
+        use_api_for_final: document.getElementById("api_final").checked,
+        use_api_for_structuring: true,
+        use_api_for_entity_linking: true,
+        use_mdt_for_uncertainty: true,
+        use_api_for_clarification: true,
+      };
+
+      try {
+        const resp = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const data = await resp.json();
+        if (!resp.ok) {
+          pending.remove();
+          addMessage("assistant", `请求失败：${data.error || resp.status}`);
+          return;
+        }
+        await pollJob(data.job_id, pending);
+      } catch (err) {
+        pending.remove();
+        addMessage("assistant", `请求异常：${String(err)}`);
+      } finally {
+        send.disabled = false;
+        statusEl.textContent = "Ready";
+        statusEl.style.background = "#f8fafc";
+        statusEl.style.borderColor = "#dae1e8";
+      }
+    }
+
+    send.addEventListener("click", submit);
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) submit();
+    });
+  </script>
+</body>
+</html>
+

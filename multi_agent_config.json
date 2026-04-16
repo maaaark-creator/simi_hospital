@@ -1,0 +1,33 @@
+{
+  "runtime": {
+    "mode": "local",
+    "specialist_mode": "heuristic",
+    "mdt_mode": "heuristic",
+    "final_mode": "heuristic",
+    "use_mdt_for_uncertainty": true,
+    "use_api_for_clarification": true,
+    "enabled_specialties": [
+      "anesthesia",
+      "cardiology",
+      "hepatobiliary"
+    ]
+  },
+  "patient_case": {
+    "source": "builtin",
+    "patient_file": null
+  },
+  "output": {
+    "ensure_ascii": false,
+    "indent": 2
+  },
+  "notes": {
+    "mode": "控制患者输入本身是否走 API 结构化。",
+    "specialist_mode": "控制首轮专科诊断是启发式还是 API。",
+    "mdt_mode": "只控制 mdt_call 分诊台本身如何分诊，不控制专科回答方式。",
+    "final_mode": "控制 head_doctor 最终汇总是启发式还是 API。",
+    "use_mdt_for_uncertainty": "是否把 head_doctor 识别出的存疑点再次回流给 mdt_call。",
+    "use_api_for_clarification": "控制 mdt_call 二次派发后，专科补充回答是否调用 API。即使 mdt_mode=heuristic，这里也可以为 true。",
+    "enabled_specialties": "允许参与流程的专科列表。",
+    "patient_file": "可选的外部病例文件路径；为空时使用 demo 内置病例。"
+  }
+}
