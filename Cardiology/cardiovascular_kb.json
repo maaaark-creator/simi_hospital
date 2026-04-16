@@ -1,0 +1,1413 @@
+{
+  "metadata": {
+    "name": "cardiovascular_internal_external_reference_kb",
+    "schema_version": "0.1.0",
+    "language": "zh-CN",
+    "last_updated": "2026-04-03",
+    "status": "expanded_scaffold",
+    "intended_use": "education_and_reference_only",
+    "warning": "本库仅作为结构化临床参考示例，不能替代心血管内外科专科医生的现场评估、最新指南、药品说明书、影像判读、手术指征判断和本院流程。",
+    "scope": [
+      "心血管内科常见疾病与急危重症",
+      "心血管外科常见疾病、术式与围手术期要点",
+      "药物、风险分层、诊疗路径、安全规则和随访建议"
+    ],
+    "expansion_notes": [
+      "本次版本将心血管内科与心血管外科放在同一知识库中，方便统一检索急诊、病房、介入和围手术期信息。",
+      "对诊断和治疗相关内容尽量分为事实字段和推断字段，避免将经验性建议伪装成绝对标准。",
+      "后续可继续补充本院路径、检查申请模板、术后 ICU 流程、抗栓桥接规则和结构化随访表单。"
+    ]
+  },
+  "source_registry": {
+    "acc_acs_2025": {
+      "title": "2025 ACC/AHA/ACEP/NAEMSP/SCAI Guideline for the Management of Patients With Acute Coronary Syndromes",
+      "organization": "American College of Cardiology / American Heart Association",
+      "url": "https://www.acc.org/About-ACC/Press-Releases/2025/02/28/17/51/ACC-AHA-Issue-New-Acute-Coronary-Syndromes-Guideline"
+    },
+    "esc_acs_2023": {
+      "title": "2023 ESC Guidelines for the Management of Acute Coronary Syndromes",
+      "organization": "European Society of Cardiology",
+      "url": "https://www.escardio.org/Guidelines/Clinical-Practice-Guidelines/Acute-Coronary-Syndromes-ACS-Guidelines"
+    },
+    "acc_hf_2022": {
+      "title": "2022 AHA/ACC/HFSA Guideline for the Management of Heart Failure",
+      "organization": "American College of Cardiology / American Heart Association / HFSA",
+      "url": "https://www.acc.org/latest-in-cardiology/ten-points-to-remember/2022/03/29/19/53/2022-aha-acc-hfsa-heart-failure-guideline-gl-hf"
+    },
+    "esc_hf_2021": {
+      "title": "2021 ESC Guidelines for the Diagnosis and Treatment of Acute and Chronic Heart Failure",
+      "organization": "European Society of Cardiology",
+      "url": "https://www.escardio.org/Guidelines/Clinical-Practice-Guidelines/Acute-and-Chronic-Heart-Failure"
+    },
+    "acc_af_2023": {
+      "title": "2023 ACC/AHA/ACCP/HRS Guideline for the Diagnosis and Management of Atrial Fibrillation",
+      "organization": "American College of Cardiology / American Heart Association / ACCP / HRS",
+      "url": "https://www.acc.org/guidelines/hubs/atrial-fibrillation"
+    },
+    "acc_svt_2015": {
+      "title": "2015 ACC/AHA/HRS Guideline for the Management of Adult Patients With Supraventricular Tachycardia",
+      "organization": "American College of Cardiology / American Heart Association / Heart Rhythm Society",
+      "url": "https://www.acc.org/Guidelines/Hubs/Supraventricular-Tachycardia"
+    },
+    "acc_revascularization_2021": {
+      "title": "2021 ACC/AHA/SCAI Guideline for Coronary Artery Revascularization",
+      "organization": "American College of Cardiology / American Heart Association / SCAI",
+      "url": "https://www.acc.org/Guidelines/Hubs/Coronary-Artery-Revascularization"
+    },
+    "acc_valve_2020": {
+      "title": "2020 ACC/AHA Guideline for the Management of Patients With Valvular Heart Disease",
+      "organization": "American College of Cardiology / American Heart Association",
+      "url": "https://www.acc.org/about-acc/press-releases/2020/12/17/18/46/valvular-heart-disease-guideline-press-release"
+    },
+    "acc_aortic_2022": {
+      "title": "2022 ACC/AHA Guideline for the Diagnosis and Management of Aortic Disease",
+      "organization": "American College of Cardiology / American Heart Association",
+      "url": "https://www.acc.org/about-acc/press-releases/2022/11/02/18/18/acc-aha-issue-aortic-disease-guideline"
+    },
+    "esc_endocarditis_2023": {
+      "title": "2023 ESC Guidelines for the Management of Endocarditis",
+      "organization": "European Society of Cardiology",
+      "url": "https://www.escardio.org/guidelines/clinical-practice-guidelines/all-esc-practice-guidelines/endocarditis-guidelines/"
+    },
+    "esc_pe_2019": {
+      "title": "2019 ESC Guidelines on Acute Pulmonary Embolism",
+      "organization": "European Society of Cardiology",
+      "url": "https://www.escardio.org/Guidelines/Clinical-Practice-Guidelines/Acute-Pulmonary-Embolism-Diagnosis-and-Management-of"
+    }
+  },
+  "terminology_aliases": {
+    "symptom_terms": {
+      "chest_pain": ["胸痛", "胸闷", "压榨样胸痛", "胸骨后痛", "angina", "chest pain", "tightness"],
+      "dyspnea": ["气促", "呼吸困难", "端坐呼吸", "夜间阵发性呼吸困难", "shortness of breath", "dyspnea", "orthopnea", "PND"],
+      "palpitation": ["心悸", "心慌", "palpitation", "rapid heartbeat"],
+      "syncope": ["晕厥", "黑朦", "意识丧失", "syncope", "presyncope"],
+      "edema": ["水肿", "下肢水肿", "踝部水肿", "edema", "leg swelling"],
+      "back_tearing_pain": ["撕裂样背痛", "突发胸背痛", "tearing pain", "back pain"]
+    },
+    "syndrome_terms": {
+      "acs": ["急性冠脉综合征", "ACS", "STEMI", "NSTEMI", "不稳定型心绞痛", "acute coronary syndrome"],
+      "heart_failure": ["心衰", "心力衰竭", "heart failure", "HF", "肺水肿"],
+      "atrial_fibrillation": ["房颤", "心房颤动", "atrial fibrillation", "AF", "AFib"],
+      "supraventricular_tachycardia": ["室上速", "SVT", "PSVT", "阵发性室上性心动过速"],
+      "aortic_syndrome": ["主动脉夹层", "主动脉综合征", "aortic dissection", "acute aortic syndrome"],
+      "infective_endocarditis": ["感染性心内膜炎", "IE", "endocarditis"],
+      "pulmonary_embolism": ["肺栓塞", "肺动脉栓塞", "PE", "pulmonary embolism"]
+    },
+    "procedure_terms": {
+      "pci": ["PCI", "经皮冠状动脉介入", "冠脉支架", "球囊扩张", "percutaneous coronary intervention"],
+      "cag": ["冠脉造影", "CAG", "coronary angiography"],
+      "cabg": ["CABG", "冠状动脉旁路移植", "搭桥", "bypass surgery"],
+      "valve_surgery": ["瓣膜置换", "瓣膜成形", "valve surgery", "MVR", "AVR", "TV repair"],
+      "tavr": ["TAVR", "TAVI", "经导管主动脉瓣置换"],
+      "tevar": ["TEVAR", "胸主动脉腔内修复"],
+      "aortic_surgery": ["升主动脉置换", "Bentall", "Sun手术", "主动脉手术", "aortic repair"],
+      "ecmo": ["ECMO", "体外膜肺氧合", "VA-ECMO"],
+      "pacemaker": ["起搏器", "临时起搏", "永久起搏器", "pacemaker", "PPM"],
+      "ablation": ["射频消融", "冷冻消融", "ablation"]
+    },
+    "ecg_terms": {
+      "st_elevation": ["ST段抬高", "ST elevation", "STEMI"],
+      "st_depression": ["ST段压低", "ST depression"],
+      "t_wave_inversion": ["T波倒置", "T inversion"],
+      "af_wave": ["房颤", "绝对不规则", "irregularly irregular"],
+      "wide_qrs_tachycardia": ["宽QRS心动过速", "wide complex tachycardia"],
+      "complete_av_block": ["三度房室传导阻滞", "完全性房室传导阻滞", "complete heart block"]
+    },
+    "imaging_terms": {
+      "reduced_lvef": ["射血分数下降", "LVEF下降", "EF低", "reduced ejection fraction"],
+      "severe_as": ["重度主动脉瓣狭窄", "severe AS"],
+      "severe_mr": ["重度二尖瓣反流", "severe MR"],
+      "tamponade": ["心包填塞", "tamponade"],
+      "aortic_aneurysm": ["主动脉瘤", "aortic aneurysm"]
+    },
+    "drug_classes": {
+      "antiplatelets": ["阿司匹林", "氯吡格雷", "替格瑞洛", "抗血小板"],
+      "anticoagulants": ["肝素", "低分子肝素", "华法林", "阿哌沙班", "利伐沙班", "抗凝"],
+      "heart_failure_gdmt": ["ARNI", "ACEI", "ARB", "β受体阻滞剂", "MRA", "SGLT2"],
+      "vasoactive_agents": ["去甲肾上腺素", "多巴酚丁胺", "血管活性药"],
+      "antiarrhythmics": ["胺碘酮", "腺苷", "地高辛", "抗心律失常药"]
+    }
+  },
+  "chief_complaint_clusters": [
+    {
+      "id": "cluster_chest_pain",
+      "name_zh": "胸痛/胸闷主诉簇",
+      "high_priority_differentials": ["stemi", "nste_acs", "acute_aortic_dissection", "pulmonary_embolism", "pericarditis"],
+      "minimum_initial_workup": ["12导联心电图", "肌钙蛋白动态检测", "生命体征评估", "床旁超声或超声心动图", "必要时 CTA"]
+    },
+    {
+      "id": "cluster_dyspnea",
+      "name_zh": "呼吸困难主诉簇",
+      "high_priority_differentials": ["acute_decompensated_heart_failure", "pulmonary_embolism", "cardiogenic_shock", "tamponade_suspected"],
+      "minimum_initial_workup": ["氧合评估", "BNP/NT-proBNP", "胸片或肺超声", "超声心动图", "血气分析"]
+    },
+    {
+      "id": "cluster_palpitation_syncope",
+      "name_zh": "心悸/晕厥主诉簇",
+      "high_priority_differentials": ["atrial_fibrillation", "supraventricular_tachycardia", "ventricular_tachyarrhythmia", "bradyarrhythmia"],
+      "minimum_initial_workup": ["心电图", "持续监护", "电解质", "超声心动图", "评估血流动力学稳定性"]
+    },
+    {
+      "id": "cluster_postop_low_output",
+      "name_zh": "心外术后低心排主诉簇",
+      "high_priority_differentials": ["post_cardiotomy_low_output_syndrome", "tamponade_suspected", "graft_or_valve_related_complication", "right_ventricular_failure"],
+      "minimum_initial_workup": ["有创监测", "乳酸", "床旁超声", "引流量评估", "必要时再次开胸或导管室评估"]
+    }
+  ],
+  "vital_sign_reference": {
+    "shock_indicators": [
+      "收缩压持续 < 90 mmHg 或较基线明显下降",
+      "平均动脉压不足且伴灌注不良",
+      "乳酸升高、尿量减少、意识改变、皮肤湿冷"
+    ],
+    "acute_hf_indicators": [
+      "呼吸频率增快",
+      "低氧血症",
+      "湿啰音、肺淤血征象",
+      "颈静脉充盈和外周水肿"
+    ],
+    "arrhythmia_instability_indicators": [
+      "低血压",
+      "胸痛或缺血证据",
+      "急性心衰/肺水肿",
+      "意识障碍或晕厥",
+      "持续休克表现"
+    ],
+    "post_cardiac_surgery_alarm_signs": [
+      "胸管引流突增或突然减少伴循环恶化",
+      "新发严重低血压",
+      "起搏依赖或新发传导阻滞",
+      "低心排、乳酸上升、混合静脉氧下降"
+    ]
+  },
+  "lab_reference": [
+    {
+      "id": "hs_troponin",
+      "name_zh": "高敏肌钙蛋白",
+      "clinical_use": ["ACS 诊断", "动态变化判断急性心肌损伤", "预后分层"],
+      "interpretation_notes": [
+        "单次升高不能等同于 1 型心肌梗死",
+        "需结合症状、心电图、动态变化和临床场景"
+      ],
+      "source_ids": ["acc_acs_2025", "esc_acs_2023"]
+    },
+    {
+      "id": "bnp_ntprobnp",
+      "name_zh": "BNP/NT-proBNP",
+      "clinical_use": ["心衰辅助诊断", "容量状态与预后评估"],
+      "interpretation_notes": [
+        "肾功能、年龄、房颤等可影响绝对值",
+        "不能替代超声心动图和临床评估"
+      ],
+      "source_ids": ["acc_hf_2022", "esc_hf_2021"]
+    },
+    {
+      "id": "d_dimer",
+      "name_zh": "D-二聚体",
+      "clinical_use": ["肺栓塞/主动脉综合征低至中风险筛查辅助"],
+      "interpretation_notes": [
+        "阴性结果更有助于排除，阳性特异性有限",
+        "需结合 Wells、YEARS 或其他风险分层"
+      ],
+      "source_ids": ["esc_pe_2019", "acc_aortic_2022"]
+    },
+    {
+      "id": "creatinine_egfr",
+      "name_zh": "肌酐/eGFR",
+      "clinical_use": ["造影前评估", "抗凝和心衰药物剂量调整", "围手术期肾损伤监测"],
+      "source_ids": ["acc_hf_2022", "acc_revascularization_2021"]
+    },
+    {
+      "id": "potassium_magnesium",
+      "name_zh": "血钾/血镁",
+      "clinical_use": ["心律失常风险评估", "利尿剂及 RAAS 抑制剂监测"],
+      "source_ids": ["acc_hf_2022", "acc_af_2023"]
+    },
+    {
+      "id": "lactate",
+      "name_zh": "乳酸",
+      "clinical_use": ["心源性休克、低灌注、术后低心排评估"],
+      "source_ids": ["acc_hf_2022"]
+    },
+    {
+      "id": "hemoglobin_platelet",
+      "name_zh": "血红蛋白/血小板",
+      "clinical_use": ["出血风险、抗栓决策、围术期输血评估"],
+      "source_ids": ["acc_acs_2025", "acc_revascularization_2021"]
+    },
+    {
+      "id": "inr_aptt",
+      "name_zh": "INR/APTT",
+      "clinical_use": ["抗凝监测", "围手术期出血评估", "机械瓣患者管理"],
+      "source_ids": ["acc_af_2023", "esc_endocarditis_2023"]
+    }
+  ],
+  "risk_scores": [
+    {
+      "id": "grace",
+      "name_zh": "GRACE 风险评分",
+      "used_for": ["NSTE-ACS 风险分层", "预后评估", "侵入策略优先级辅助"],
+      "core_variables": ["年龄", "心率", "收缩压", "肌酐", "Killip 分级", "ST 改变", "心肌标志物", "心脏骤停"],
+      "source_ids": ["acc_acs_2025", "esc_acs_2023"]
+    },
+    {
+      "id": "cha2ds2_vasc",
+      "name_zh": "CHA2DS2-VASc",
+      "used_for": ["房颤脑卒中风险评估"],
+      "core_variables": ["心衰", "高血压", "年龄", "糖尿病", "卒中/TIA", "血管病", "性别"],
+      "source_ids": ["acc_af_2023"]
+    },
+    {
+      "id": "has_bled",
+      "name_zh": "HAS-BLED",
+      "used_for": ["抗凝出血风险识别"],
+      "interpretation_notes": [
+        "高分不是抗凝绝对禁忌，而是提示要纠正可修正风险因素并加强监测"
+      ],
+      "source_ids": ["acc_af_2023"]
+    },
+    {
+      "id": "nyha",
+      "name_zh": "NYHA 心功能分级",
+      "used_for": ["慢性心衰症状分层", "治疗与随访沟通"],
+      "source_ids": ["acc_hf_2022", "esc_hf_2021"]
+    },
+    {
+      "id": "killip",
+      "name_zh": "Killip 分级",
+      "used_for": ["急性心肌梗死伴心衰/休克分层"],
+      "source_ids": ["acc_acs_2025", "esc_acs_2023"]
+    },
+    {
+      "id": "sts_euroscore",
+      "name_zh": "STS/EuroSCORE II 手术风险评估",
+      "used_for": ["瓣膜病和冠脉重建心外科风险评估", "Heart Team 决策"],
+      "source_ids": ["acc_valve_2020", "acc_revascularization_2021"]
+    }
+  ],
+  "medical_conditions": [
+    {
+      "id": "stemi",
+      "name_zh": "ST 段抬高型心肌梗死",
+      "name_en": "ST-elevation myocardial infarction",
+      "aliases": ["STEMI", "急性 ST 段抬高心梗"],
+      "category": "冠心病急症",
+      "typical_presentations": ["持续胸痛", "出汗", "恶心", "濒死感", "可伴休克或心衰"],
+      "diagnostic_clues": ["持续 ST 段抬高或新发等危改变", "肌钙蛋白升高/动态变化", "冠脉闭塞证据"],
+      "initial_workup": ["10 分钟内心电图", "立即评估再灌注通道", "肌钙蛋白", "床旁超声", "并发症筛查"],
+      "risk_stratification": ["Killip 分级", "血流动力学稳定性", "梗死部位", "机械并发症筛查"],
+      "first_line_management": [
+        "尽快启动再灌注策略，首选符合条件的 PCI",
+        "按出血风险和通道选择抗血小板/抗凝",
+        "并行处理缺氧、休克、严重心律失常和机械并发症"
+      ],
+      "escalation_flags": ["心源性休克", "持续胸痛", "室速/室颤", "机械并发症", "右室梗死"],
+      "common_related_drugs": ["aspirin", "ticagrelor", "clopidogrel", "unfractionated_heparin", "atorvastatin_high_intensity", "nitroglycerin"],
+      "related_procedures": ["cag", "pci", "mechanical_support"],
+      "source_ids": ["acc_acs_2025", "esc_acs_2023", "acc_revascularization_2021"]
+    },
+    {
+      "id": "nste_acs",
+      "name_zh": "非 ST 段抬高 ACS",
+      "name_en": "NSTE-ACS",
+      "aliases": ["NSTEMI", "不稳定型心绞痛"],
+      "category": "冠心病急症",
+      "typical_presentations": ["静息或轻微活动胸痛", "症状反复", "可伴气促和出汗"],
+      "diagnostic_clues": ["动态 ST-T 改变", "高敏肌钙蛋白动态变化", "GRACE 风险升高"],
+      "initial_workup": ["重复心电图", "0/1h 或 0/2h 肌钙蛋白策略", "风险分层", "必要时早期造影"],
+      "risk_stratification": ["GRACE", "出血风险", "肾功能", "持续缺血证据"],
+      "first_line_management": [
+        "抗缺血、抗血小板和抗凝治疗",
+        "根据风险尽早决定侵入性策略",
+        "识别高危解剖、反复缺血和心衰"
+      ],
+      "escalation_flags": ["反复胸痛", "动态 ST 改变", "血流动力学不稳", "恶性心律失常"],
+      "common_related_drugs": ["aspirin", "ticagrelor", "clopidogrel", "enoxaparin", "unfractionated_heparin", "atorvastatin_high_intensity"],
+      "related_procedures": ["cag", "pci", "cabg"],
+      "source_ids": ["acc_acs_2025", "esc_acs_2023", "acc_revascularization_2021"]
+    },
+    {
+      "id": "chronic_coronary_syndrome",
+      "name_zh": "慢性冠脉综合征",
+      "name_en": "Chronic coronary syndrome",
+      "aliases": ["稳定性心绞痛", "慢性冠心病"],
+      "category": "冠心病慢病",
+      "typical_presentations": ["劳力性胸痛", "活动后胸闷", "稳定负荷诱发症状"],
+      "diagnostic_clues": ["缺血证据", "冠脉狭窄证据", "危险因素负担"],
+      "initial_workup": ["病史与危险因素评估", "静息心电图", "超声心动图", "缺血评估", "必要时 CTA/CAG"],
+      "first_line_management": ["危险因素控制", "抗血小板/降脂", "抗心绞痛治疗", "症状或预后驱动的血运重建评估"],
+      "common_related_drugs": ["aspirin", "atorvastatin_high_intensity", "metoprolol_succinate", "nitroglycerin"],
+      "related_procedures": ["cag", "pci", "cabg"],
+      "source_ids": ["acc_revascularization_2021"]
+    },
+    {
+      "id": "acute_decompensated_heart_failure",
+      "name_zh": "急性失代偿性心衰",
+      "name_en": "Acute decompensated heart failure",
+      "aliases": ["ADHF", "急性左心衰", "急性肺水肿"],
+      "category": "心衰急症",
+      "typical_presentations": ["呼吸困难", "端坐呼吸", "湿啰音", "低氧血症", "外周水肿"],
+      "diagnostic_clues": ["BNP/NT-proBNP 升高", "超声提示充血/收缩或舒张异常", "胸片肺淤血"],
+      "initial_workup": ["氧合评估", "床旁超声", "超声心动图", "肾功能和电解质", "诱因筛查"],
+      "risk_stratification": ["是否低灌注", "是否休克", "肾功能", "血压水平", "诱因可逆性"],
+      "first_line_management": [
+        "先分型为湿/干、暖/冷",
+        "以利尿、氧合支持、诱因处理为主",
+        "休克或低灌注时需升级血流动力学支持和监测"
+      ],
+      "escalation_flags": ["收缩压低", "乳酸升高", "少尿", "机械通气需求", "难治性低氧"],
+      "common_related_drugs": ["furosemide", "nitroglycerin", "dobutamine", "norepinephrine", "spironolactone", "sacubitril_valsartan"],
+      "related_procedures": ["echo", "right_heart_catheterization", "ecmo"],
+      "source_ids": ["acc_hf_2022", "esc_hf_2021"]
+    },
+    {
+      "id": "hfrEF",
+      "name_zh": "射血分数降低型心衰",
+      "name_en": "Heart failure with reduced ejection fraction",
+      "aliases": ["HFrEF"],
+      "category": "慢性心衰",
+      "typical_presentations": ["活动耐量下降", "气促", "疲劳", "水肿"],
+      "diagnostic_clues": ["LVEF <= 40%", "结构性心脏病", "典型心衰症状体征"],
+      "first_line_management": [
+        "建立四大基石药物框架：ARNI/ACEI/ARB、证据级 β 受体阻滞剂、MRA、SGLT2 抑制剂",
+        "必要时加利尿剂控制容量",
+        "根据病因决定重建、器械治疗和高级治疗路径"
+      ],
+      "common_related_drugs": ["sacubitril_valsartan", "metoprolol_succinate", "spironolactone", "dapagliflozin", "furosemide"],
+      "related_procedures": ["echo", "icd_crt_assessment", "cag", "revascularization"],
+      "source_ids": ["acc_hf_2022", "esc_hf_2021"]
+    },
+    {
+      "id": "hfpEF",
+      "name_zh": "射血分数保留型心衰",
+      "name_en": "Heart failure with preserved ejection fraction",
+      "aliases": ["HFpEF"],
+      "category": "慢性心衰",
+      "typical_presentations": ["劳力性气促", "运动耐量下降", "容量负荷波动"],
+      "diagnostic_clues": ["LVEF >= 50%", "舒张功能异常/充盈压升高证据", "排除非心源性气促"],
+      "first_line_management": ["控制血压和容量状态", "管理房颤、肥胖、OSA、CKD 等共病", "SGLT2 抑制剂为重要候选基础治疗"],
+      "common_related_drugs": ["dapagliflozin", "furosemide", "spironolactone", "valsartan"],
+      "related_procedures": ["echo"],
+      "source_ids": ["acc_hf_2022", "esc_hf_2021"]
+    },
+    {
+      "id": "atrial_fibrillation",
+      "name_zh": "心房颤动",
+      "name_en": "Atrial fibrillation",
+      "aliases": ["房颤", "AF"],
+      "category": "心律失常",
+      "typical_presentations": ["心悸", "气促", "乏力", "可无症状", "可因卒中首发"],
+      "diagnostic_clues": ["P 波消失", "RR 绝对不规则", "发作性或持续性病史"],
+      "initial_workup": ["12 导联心电图", "血流动力学稳定性", "甲状腺/电解质/感染诱因评估", "超声心动图"],
+      "risk_stratification": ["CHA2DS2-VASc", "HAS-BLED", "是否合并心衰/瓣膜病", "房颤负荷与症状"],
+      "first_line_management": [
+        "先判断是否不稳定，不稳定则同步电复律",
+        "稳定患者在控率、复律和抗凝三条主线之间个体化选择",
+        "长期需重视减重、血压、睡眠呼吸暂停、酒精等危险因素管理"
+      ],
+      "escalation_flags": ["低血压", "急性肺水肿", "持续缺血", "快速房颤伴休克"],
+      "common_related_drugs": ["metoprolol_succinate", "amiodarone", "digoxin", "apixaban", "rivaroxaban", "warfarin"],
+      "related_procedures": ["electrical_cardioversion", "tee_guided_strategy", "ablation", "laa_closure_assessment"],
+      "source_ids": ["acc_af_2023"]
+    },
+    {
+      "id": "supraventricular_tachycardia",
+      "name_zh": "室上性心动过速",
+      "name_en": "Supraventricular tachycardia",
+      "aliases": ["SVT", "PSVT", "AVNRT", "AVRT"],
+      "category": "心律失常",
+      "typical_presentations": ["突发突止心悸", "胸闷", "头晕", "可伴低血压"],
+      "diagnostic_clues": ["规则窄 QRS 心动过速", "迷走刺激或腺苷终止提示折返机制"],
+      "first_line_management": ["稳定者先迷走刺激，再考虑腺苷", "不稳定者同步电复律", "复发患者评估消融"],
+      "common_related_drugs": ["adenosine", "metoprolol_succinate", "amiodarone"],
+      "related_procedures": ["electrical_cardioversion", "ablation"],
+      "source_ids": ["acc_svt_2015"]
+    },
+    {
+      "id": "bradyarrhythmia",
+      "name_zh": "显著性缓慢性心律失常",
+      "name_en": "Clinically significant bradyarrhythmia",
+      "aliases": ["病态窦房结综合征", "高度房室传导阻滞"],
+      "category": "心律失常",
+      "typical_presentations": ["晕厥", "头晕", "乏力", "低血压"],
+      "diagnostic_clues": ["窦性停搏", "高度或完全性房室传导阻滞", "缓慢心室率"],
+      "first_line_management": ["评估可逆诱因", "症状性或不稳定者准备临时起搏", "长期指征明确者评估永久起搏器"],
+      "common_related_drugs": ["norepinephrine"],
+      "related_procedures": ["temporary_pacing", "pacemaker"],
+      "source_ids": ["acc_af_2023"]
+    },
+    {
+      "id": "ventricular_tachyarrhythmia",
+      "name_zh": "室性快速性心律失常",
+      "name_en": "Ventricular tachyarrhythmia",
+      "aliases": ["VT", "VF", "室速", "室颤"],
+      "category": "心律失常急症",
+      "typical_presentations": ["心悸", "晕厥", "心脏骤停", "血流动力学崩溃"],
+      "diagnostic_clues": ["宽 QRS 快速心律", "器质性心脏病背景", "电解质紊乱或缺血诱因"],
+      "first_line_management": [
+        "无脉按 ACLS/除颤路径",
+        "有脉不稳定则同步电复律",
+        "稳定者评估缺血、电解质、QT、瘢痕底物并使用抗心律失常药"
+      ],
+      "common_related_drugs": ["amiodarone", "norepinephrine", "dobutamine"],
+      "related_procedures": ["defibrillation", "electrical_cardioversion", "ablation", "icd_crt_assessment"],
+      "source_ids": ["acc_af_2023"]
+    },
+    {
+      "id": "hypertensive_emergency",
+      "name_zh": "高血压急症",
+      "name_en": "Hypertensive emergency",
+      "aliases": ["高血压危象伴靶器官损害"],
+      "category": "血压急症",
+      "typical_presentations": ["极高血压", "胸痛", "神经系统症状", "急性心衰", "主动脉夹层场景"],
+      "diagnostic_clues": ["急性靶器官损害证据", "需要与单纯高血压急迫症区分"],
+      "first_line_management": ["根据病因和靶器官损害类型平稳降压", "主动脉综合征需更快控压控心率", "避免无指征过度降压"],
+      "common_related_drugs": ["nitroglycerin"],
+      "related_procedures": ["arterial_line"],
+      "source_ids": ["acc_aortic_2022", "acc_hf_2022"]
+    },
+    {
+      "id": "pulmonary_embolism",
+      "name_zh": "急性肺栓塞",
+      "name_en": "Pulmonary embolism",
+      "aliases": ["PE"],
+      "category": "心肺血管急症",
+      "typical_presentations": ["突发气促", "胸痛", "低氧", "心动过速", "晕厥"],
+      "diagnostic_clues": ["风险分层后 CTA 或超声证据", "右心负荷增高", "D-二聚体辅助排除"],
+      "first_line_management": ["按血流动力学分层决定抗凝、溶栓、介入或手术", "休克者优先抢救与高级通路"],
+      "common_related_drugs": ["unfractionated_heparin", "enoxaparin", "apixaban", "rivaroxaban"],
+      "related_procedures": ["ctpa", "catheter_directed_therapy", "surgical_embolectomy"],
+      "source_ids": ["esc_pe_2019"]
+    },
+    {
+      "id": "infective_endocarditis",
+      "name_zh": "感染性心内膜炎",
+      "name_en": "Infective endocarditis",
+      "aliases": ["IE"],
+      "category": "感染与瓣膜相关",
+      "typical_presentations": ["发热", "菌血症", "新发杂音", "栓塞表现", "心衰"],
+      "diagnostic_clues": ["血培养", "超声心动图赘生物/并发症", "修订 Duke 标准"],
+      "first_line_management": [
+        "在抗菌治疗前尽可能获取充分血培养",
+        "评估心衰、持续感染、栓塞风险和手术指征",
+        "优先由 Endocarditis Team 协作管理"
+      ],
+      "escalation_flags": ["瓣周脓肿", "难治性心衰", "持续菌血症", "大赘生物反复栓塞"],
+      "related_procedures": ["tee", "valve_surgery", "device_extraction"],
+      "source_ids": ["esc_endocarditis_2023"]
+    }
+  ],
+  "surgical_conditions": [
+    {
+      "id": "multivessel_cad_for_revascularization",
+      "name_zh": "需评估血运重建的多支病变冠心病",
+      "name_en": "Multivessel CAD requiring revascularization assessment",
+      "typical_scenarios": ["左主干病变", "多支病变", "糖尿病合并复杂冠脉病变", "PCI 不适合或失败"],
+      "core_decision_points": ["症状和缺血负担", "解剖复杂度", "LVEF", "糖尿病", "手术风险", "Heart Team 讨论"],
+      "preferred_pathway_summary": "PCI 与 CABG 的选择不应仅看单支病变，而应同时看解剖复杂度、预后获益和患者目标。",
+      "related_procedures": ["cag", "pci", "cabg"],
+      "source_ids": ["acc_revascularization_2021"]
+    },
+    {
+      "id": "severe_aortic_stenosis",
+      "name_zh": "重度主动脉瓣狭窄",
+      "name_en": "Severe aortic stenosis",
+      "typical_scenarios": ["劳力性晕厥", "心绞痛", "心衰", "低流量低压差评估"],
+      "core_decision_points": ["症状负担", "瓣膜严重程度", "年龄与寿命预期", "外科风险", "解剖条件", "TAVR 可行性"],
+      "preferred_pathway_summary": "需由 Heart Team 在 SAVR 与 TAVR 之间做患者中心化决策。",
+      "related_procedures": ["echo", "valve_surgery", "tavr"],
+      "source_ids": ["acc_valve_2020"]
+    },
+    {
+      "id": "severe_mitral_regurgitation",
+      "name_zh": "重度二尖瓣反流",
+      "name_en": "Severe mitral regurgitation",
+      "typical_scenarios": ["器质性 MR", "功能性 MR", "房颤/心衰伴 MR"],
+      "core_decision_points": ["器质性还是功能性", "左室大小和功能", "肺动脉压", "症状", "可修复性"],
+      "preferred_pathway_summary": "尽可能在合适时机转诊至具备修复经验的中心评估修复优先级。",
+      "related_procedures": ["echo", "tee", "valve_surgery"],
+      "source_ids": ["acc_valve_2020"]
+    },
+    {
+      "id": "acute_aortic_dissection",
+      "name_zh": "急性主动脉夹层/急性主动脉综合征",
+      "name_en": "Acute aortic dissection",
+      "typical_scenarios": ["突发撕裂样胸背痛", "肢体灌注异常", "休克", "神经症状"],
+      "core_decision_points": ["Stanford 分型", "是否破裂/低灌注", "是否需紧急手术或腔内治疗", "控压控心率", "中心转运"],
+      "preferred_pathway_summary": "A 型通常需紧急外科；复杂 B 型需评估 TEVAR；始终重视多学科主动脉团队。",
+      "related_procedures": ["cta", "aortic_surgery", "tevar"],
+      "source_ids": ["acc_aortic_2022"]
+    },
+    {
+      "id": "ascending_aortic_aneurysm",
+      "name_zh": "升主动脉/主动脉根部瘤",
+      "name_en": "Ascending aortic aneurysm",
+      "typical_scenarios": ["偶然发现", "Marfan/遗传性疾病", "二叶式主动脉瓣伴扩张"],
+      "core_decision_points": ["直径", "增长速度", "遗传背景", "体型校正", "是否合并瓣膜病"],
+      "preferred_pathway_summary": "手术阈值需结合病因、增速、家族史和手术中心经验，而非只看单一绝对直径。",
+      "related_procedures": ["cta", "mri_aorta", "echo", "aortic_surgery"],
+      "source_ids": ["acc_aortic_2022"]
+    },
+    {
+      "id": "post_cardiotomy_low_output_syndrome",
+      "name_zh": "心脏术后低心排综合征",
+      "name_en": "Post-cardiotomy low output syndrome",
+      "typical_scenarios": ["CABG/瓣膜/主动脉术后", "乳酸升高", "低血压", "升压药依赖"],
+      "core_decision_points": ["容量状态", "右心功能", "瓣膜/桥血管问题", "心包填塞", "是否需机械循环支持"],
+      "preferred_pathway_summary": "需快速排查机械原因与可逆原因，并在 ICU、超声、外科和灌注团队间快速闭环。",
+      "related_procedures": ["echo", "re_exploration", "ecmo"],
+      "source_ids": ["acc_hf_2022", "acc_revascularization_2021"]
+    }
+  ],
+  "drugs": [
+    {
+      "id": "aspirin",
+      "name_zh": "阿司匹林",
+      "name_en": "aspirin",
+      "class": "抗血小板药",
+      "common_routes": ["PO"],
+      "common_uses": ["ACS 初始和维持抗血小板", "慢性冠心病二级预防", "CABG/PCI 术后抗栓基础"],
+      "usual_adult_reference": "ACS 初始负荷后维持低剂量长期使用为常见策略之一，具体剂量遵循指南与出血风险。",
+      "major_contraindications": ["活动性严重出血", "明确阿司匹林过敏", "某些严重出血性疾病场景"],
+      "major_warnings": ["胃肠道出血", "与其他抗栓联用时出血风险叠加"],
+      "monitoring": ["出血", "血红蛋白", "胃肠道耐受性"],
+      "source_ids": ["acc_acs_2025", "acc_revascularization_2021"]
+    },
+    {
+      "id": "clopidogrel",
+      "name_zh": "氯吡格雷",
+      "name_en": "clopidogrel",
+      "class": "P2Y12 受体抑制剂",
+      "common_routes": ["PO"],
+      "common_uses": ["ACS 或 PCI 后 DAPT 组成部分", "部分手术前后抗栓桥接决策中的背景药"],
+      "major_contraindications": ["活动性出血"],
+      "major_warnings": ["出血", "起效和反应存在个体差异"],
+      "monitoring": ["出血", "血常规", "围术期停药窗口"],
+      "source_ids": ["acc_acs_2025", "acc_revascularization_2021"]
+    },
+    {
+      "id": "ticagrelor",
+      "name_zh": "替格瑞洛",
+      "name_en": "ticagrelor",
+      "class": "P2Y12 受体抑制剂",
+      "common_routes": ["PO"],
+      "common_uses": ["ACS 强化抗血小板治疗", "PCI 后 DAPT 组成部分"],
+      "major_contraindications": ["活动性出血", "既往颅内出血等高危场景需慎重"],
+      "major_warnings": ["出血", "呼吸困难主诉", "缓慢性心律失常场景需留意"],
+      "monitoring": ["出血", "耐受性", "围术期停药时间"],
+      "source_ids": ["acc_acs_2025", "esc_acs_2023"]
+    },
+    {
+      "id": "atorvastatin_high_intensity",
+      "name_zh": "阿托伐他汀（高强度）",
+      "name_en": "atorvastatin high intensity",
+      "class": "高强度他汀",
+      "common_routes": ["PO"],
+      "common_uses": ["ACS", "冠心病二级预防", "围介入长期降脂"],
+      "major_warnings": ["转氨酶升高", "肌病风险", "合并某些药物时相互作用增加"],
+      "monitoring": ["肝功能", "肌痛症状", "LDL-C 达标情况"],
+      "source_ids": ["acc_acs_2025", "acc_revascularization_2021"]
+    },
+    {
+      "id": "unfractionated_heparin",
+      "name_zh": "普通肝素",
+      "name_en": "unfractionated heparin",
+      "class": "抗凝药",
+      "common_routes": ["IV", "SC"],
+      "common_uses": ["ACS", "PCI 围术期", "高危 PE", "部分机械支持场景"],
+      "major_contraindications": ["活动性严重出血", "HIT 病史"],
+      "major_warnings": ["出血", "HIT", "需监测 APTT 或 ACT 场景"],
+      "monitoring": ["APTT/ACT", "血小板", "出血", "肾功能整体背景"],
+      "source_ids": ["acc_acs_2025", "esc_pe_2019"]
+    },
+    {
+      "id": "enoxaparin",
+      "name_zh": "依诺肝素",
+      "name_en": "enoxaparin",
+      "class": "低分子肝素",
+      "common_routes": ["SC"],
+      "common_uses": ["NSTE-ACS", "VTE/PE 抗凝", "桥接场景"],
+      "major_contraindications": ["活动性严重出血", "HIT 相关病史"],
+      "major_warnings": ["肾功能不全需调整", "围手术期出血"],
+      "monitoring": ["肾功能", "出血", "血常规"],
+      "source_ids": ["acc_acs_2025", "esc_pe_2019"]
+    },
+    {
+      "id": "apixaban",
+      "name_zh": "阿哌沙班",
+      "name_en": "apixaban",
+      "class": "DOAC",
+      "common_routes": ["PO"],
+      "common_uses": ["非瓣膜性房颤卒中预防", "VTE/PE 治疗"],
+      "major_contraindications": ["活动性严重出血", "某些机械瓣场景不适用"],
+      "major_warnings": ["肾功能与年龄体重影响剂量", "围操作停药时机要个体化"],
+      "monitoring": ["肾功能", "出血", "依从性"],
+      "source_ids": ["acc_af_2023", "esc_pe_2019"]
+    },
+    {
+      "id": "rivaroxaban",
+      "name_zh": "利伐沙班",
+      "name_en": "rivaroxaban",
+      "class": "DOAC",
+      "common_routes": ["PO"],
+      "common_uses": ["非瓣膜性房颤卒中预防", "VTE/PE 治疗"],
+      "major_contraindications": ["活动性严重出血", "某些机械瓣场景不适用"],
+      "major_warnings": ["肾功能和出血风险评估必需"],
+      "monitoring": ["肾功能", "出血", "药物依从性"],
+      "source_ids": ["acc_af_2023", "esc_pe_2019"]
+    },
+    {
+      "id": "warfarin",
+      "name_zh": "华法林",
+      "name_en": "warfarin",
+      "class": "维生素 K 拮抗剂",
+      "common_routes": ["PO"],
+      "common_uses": ["机械瓣抗凝", "部分房颤或血栓高危场景"],
+      "major_contraindications": ["妊娠特定时期", "活动性严重出血"],
+      "major_warnings": ["药物和饮食相互作用多", "INR 波动大"],
+      "monitoring": ["INR", "出血", "药物相互作用"],
+      "source_ids": ["acc_af_2023", "esc_endocarditis_2023"]
+    },
+    {
+      "id": "metoprolol_succinate",
+      "name_zh": "美托洛尔",
+      "name_en": "metoprolol",
+      "class": "β 受体阻滞剂",
+      "common_routes": ["PO", "IV"],
+      "common_uses": ["房颤控率", "心衰长期治疗", "冠心病抗缺血", "部分 SVT"],
+      "major_contraindications": ["显著缓慢心律", "高度房室传导阻滞", "急性失代偿性低灌注场景"],
+      "major_warnings": ["低血压", "支气管痉挛倾向患者需谨慎", "急性心衰期避免盲目上量"],
+      "monitoring": ["心率", "血压", "传导", "心衰症状"],
+      "source_ids": ["acc_hf_2022", "acc_af_2023", "acc_revascularization_2021"]
+    },
+    {
+      "id": "amiodarone",
+      "name_zh": "胺碘酮",
+      "name_en": "amiodarone",
+      "class": "III 类抗心律失常药",
+      "common_routes": ["IV", "PO"],
+      "common_uses": ["房颤复律/控率特定场景", "室速/室颤", "部分术后心律失常"],
+      "major_warnings": ["QT 延长", "心动过缓", "长期用药甲状腺/肝/肺毒性", "与华法林地高辛相互作用"],
+      "monitoring": ["心电图 QTc", "肝功能", "甲状腺功能", "药物相互作用"],
+      "source_ids": ["acc_af_2023"]
+    },
+    {
+      "id": "adenosine",
+      "name_zh": "腺苷",
+      "name_en": "adenosine",
+      "class": "短效抗心律失常药",
+      "common_routes": ["IV"],
+      "common_uses": ["规则窄 QRS SVT 终止或诊断辅助"],
+      "major_contraindications": ["某些高度房室传导阻滞且无起搏保护", "严重支气管痉挛倾向需谨慎"],
+      "major_warnings": ["一过性面红、胸闷、短暂停搏", "不规则宽 QRS 心动过速场景需谨慎辨别"],
+      "monitoring": ["连续监护", "备好除颤和抢救条件"],
+      "source_ids": ["acc_svt_2015"]
+    },
+    {
+      "id": "digoxin",
+      "name_zh": "地高辛",
+      "name_en": "digoxin",
+      "class": "强心苷",
+      "common_routes": ["PO", "IV"],
+      "common_uses": ["房颤控率特定场景", "部分 HFrEF 症状控制"],
+      "major_warnings": ["肾功能不全易蓄积", "中毒可致多种心律失常", "与胺碘酮相互作用明显"],
+      "monitoring": ["肾功能", "血钾", "中毒表现", "必要时血药浓度"],
+      "source_ids": ["acc_hf_2022", "acc_af_2023"]
+    },
+    {
+      "id": "nitroglycerin",
+      "name_zh": "硝酸甘油",
+      "name_en": "nitroglycerin",
+      "class": "硝酸酯类",
+      "common_routes": ["SL", "IV"],
+      "common_uses": ["缺血性胸痛", "高血压伴肺水肿", "急性心衰部分场景"],
+      "major_contraindications": ["明显低血压", "右室梗死需谨慎", "近期 PDE5 抑制剂使用"],
+      "major_warnings": ["头痛", "低血压", "反射性心动过速"],
+      "monitoring": ["血压", "症状缓解", "右室梗死线索"],
+      "source_ids": ["acc_acs_2025", "esc_acs_2023", "acc_hf_2022"]
+    },
+    {
+      "id": "furosemide",
+      "name_zh": "呋塞米",
+      "name_en": "furosemide",
+      "class": "袢利尿剂",
+      "common_routes": ["IV", "PO"],
+      "common_uses": ["急性和慢性心衰容量控制"],
+      "major_warnings": ["低钾", "肾前性恶化", "利尿不足时需重新评估药效与病因"],
+      "monitoring": ["尿量", "体重", "血压", "电解质", "肾功能"],
+      "source_ids": ["acc_hf_2022", "esc_hf_2021"]
+    },
+    {
+      "id": "spironolactone",
+      "name_zh": "螺内酯",
+      "name_en": "spironolactone",
+      "class": "MRA",
+      "common_routes": ["PO"],
+      "common_uses": ["HFrEF 基础治疗", "部分 HFpEF/难治性高血压场景"],
+      "major_contraindications": ["高钾血症", "重度肾功能不全未评估"],
+      "major_warnings": ["高钾", "肌酐上升", "与 ACEI/ARB/ARNI 联合时更需监测"],
+      "monitoring": ["血钾", "肾功能", "血压"],
+      "source_ids": ["acc_hf_2022", "esc_hf_2021"]
+    },
+    {
+      "id": "sacubitril_valsartan",
+      "name_zh": "沙库巴曲缬沙坦",
+      "name_en": "sacubitril valsartan",
+      "class": "ARNI",
+      "common_routes": ["PO"],
+      "common_uses": ["HFrEF GDMT 核心药物"],
+      "major_contraindications": ["血管性水肿病史特定场景", "妊娠", "与 ACEI 紧邻切换需注意洗脱"],
+      "major_warnings": ["低血压", "肾功能恶化", "高钾"],
+      "monitoring": ["血压", "肾功能", "血钾"],
+      "source_ids": ["acc_hf_2022", "esc_hf_2021"]
+    },
+    {
+      "id": "valsartan",
+      "name_zh": "缬沙坦",
+      "name_en": "valsartan",
+      "class": "ARB",
+      "common_routes": ["PO"],
+      "common_uses": ["高血压", "心衰", "部分瓣膜病或主动脉病背景下合并血压管理"],
+      "major_warnings": ["低血压", "高钾", "肾功能恶化"],
+      "monitoring": ["血压", "肾功能", "血钾"],
+      "source_ids": ["acc_hf_2022", "acc_aortic_2022"]
+    },
+    {
+      "id": "dapagliflozin",
+      "name_zh": "达格列净",
+      "name_en": "dapagliflozin",
+      "class": "SGLT2 抑制剂",
+      "common_routes": ["PO"],
+      "common_uses": ["HFrEF", "HFpEF", "糖尿病合并心衰"],
+      "major_warnings": ["容量不足", "酮症酸中毒特定风险", "围手术期停药策略需提前计划"],
+      "monitoring": ["肾功能", "容量状态", "感染和酮症风险"],
+      "source_ids": ["acc_hf_2022", "esc_hf_2021"]
+    },
+    {
+      "id": "dobutamine",
+      "name_zh": "多巴酚丁胺",
+      "name_en": "dobutamine",
+      "class": "正性肌力药",
+      "common_routes": ["IV"],
+      "common_uses": ["低心排和心源性休克特定场景", "术后低心排"],
+      "major_warnings": ["诱发心律失常", "心肌耗氧增加", "低血压时常需联用升压药"],
+      "monitoring": ["连续监护", "乳酸", "尿量", "超声血流动力学"],
+      "source_ids": ["acc_hf_2022"]
+    },
+    {
+      "id": "norepinephrine",
+      "name_zh": "去甲肾上腺素",
+      "name_en": "norepinephrine",
+      "class": "升压药",
+      "common_routes": ["IV"],
+      "common_uses": ["心源性休克伴低血压", "围术期血流动力学支持"],
+      "major_warnings": ["外周灌注受损", "需中心静脉通路优先", "应与容量和病因处理并行"],
+      "monitoring": ["有创血压", "乳酸", "末梢灌注", "心律失常"],
+      "source_ids": ["acc_hf_2022", "acc_aortic_2022"]
+    }
+  ],
+  "care_plans": [
+    {
+      "id": "acs_initial_evaluation",
+      "name_zh": "ACS 初始评估路径",
+      "typical_indications": ["胸痛", "动态 ST-T 改变", "肌钙蛋白异常", "ACS 高危主诉"],
+      "core_steps": [
+        "第一时间判断 STEMI 还是 NSTE-ACS",
+        "启动连续监护和重复心电图",
+        "完成肌钙蛋白动态检测",
+        "并行评估休克、心衰、致命性心律失常和主动脉/PE 鉴别"
+      ],
+      "candidate_drugs": {
+        "antiplatelets": ["aspirin", "ticagrelor", "clopidogrel"],
+        "anticoagulants": ["unfractionated_heparin", "enoxaparin"],
+        "anti_ischemic": ["nitroglycerin"],
+        "lipid_lowering": ["atorvastatin_high_intensity"]
+      },
+      "required_monitoring": ["ECG", "SpO2", "血压", "肌钙蛋白动态", "出血风险"],
+      "source_ids": ["acc_acs_2025", "esc_acs_2023"]
+    },
+    {
+      "id": "stemi_reperfusion_pathway",
+      "name_zh": "STEMI 再灌注路径",
+      "typical_indications": ["明确 STEMI 或等危心电图表现"],
+      "core_steps": [
+        "尽快完成导管室或转运决策",
+        "准备抗栓并评估出血风险",
+        "识别并处理右室梗死、机械并发症、休克",
+        "术后进入二级预防和并发症监测"
+      ],
+      "candidate_drugs": {
+        "antiplatelets": ["aspirin", "ticagrelor", "clopidogrel"],
+        "anticoagulants": ["unfractionated_heparin"],
+        "anti_ischemic": ["nitroglycerin"],
+        "lipid_lowering": ["atorvastatin_high_intensity"]
+      },
+      "required_monitoring": ["连续心电监护", "血压", "缺血症状", "出血", "超声并发症评估"],
+      "related_procedures": ["cag", "pci", "mechanical_support"],
+      "source_ids": ["acc_acs_2025", "acc_revascularization_2021"]
+    },
+    {
+      "id": "acute_hf_decongestion",
+      "name_zh": "急性心衰减充血路径",
+      "typical_indications": ["肺水肿", "容量超负荷", "急性失代偿心衰"],
+      "core_steps": [
+        "按湿/干、暖/冷做初始分型",
+        "利尿、氧合和诱因处理并行",
+        "若低灌注或休克，升级到血流动力学支持和 ICU"
+      ],
+      "candidate_drugs": {
+        "diuretics": ["furosemide"],
+        "vasodilators": ["nitroglycerin"],
+        "inotropes": ["dobutamine"],
+        "vasopressors": ["norepinephrine"]
+      },
+      "required_monitoring": ["尿量", "体重", "电解质", "肾功能", "乳酸", "超声"],
+      "source_ids": ["acc_hf_2022", "esc_hf_2021"]
+    },
+    {
+      "id": "hfrEF_gdmt_buildout",
+      "name_zh": "HFrEF 基础治疗建模路径",
+      "typical_indications": ["稳定期 HFrEF", "出院后心衰管理"],
+      "core_steps": [
+        "评估容量状态和血压后尽早建立 GDMT",
+        "优先考虑四大基石药物的可耐受起始和加量",
+        "结合病因、器械适应证和康复管理"
+      ],
+      "candidate_drugs": {
+        "arni_or_arb": ["sacubitril_valsartan", "valsartan"],
+        "beta_blocker": ["metoprolol_succinate"],
+        "mra": ["spironolactone"],
+        "sglt2": ["dapagliflozin"],
+        "diuretics": ["furosemide"]
+      },
+      "required_monitoring": ["血压", "心率", "血钾", "肌酐", "体重", "症状分级"],
+      "source_ids": ["acc_hf_2022", "esc_hf_2021"]
+    },
+    {
+      "id": "af_rate_rhythm_anticoag",
+      "name_zh": "房颤控率/复律/抗凝路径",
+      "typical_indications": ["新发或既往房颤", "快速心室率", "症状性房颤"],
+      "core_steps": [
+        "先判断是否不稳定",
+        "再决定控率还是节律控制优先",
+        "同时完成卒中风险与出血风险评估",
+        "决定 DOAC、华法林或特殊策略"
+      ],
+      "candidate_drugs": {
+        "rate_control": ["metoprolol_succinate", "digoxin", "amiodarone"],
+        "rhythm_control": ["amiodarone"],
+        "anticoagulation": ["apixaban", "rivaroxaban", "warfarin"]
+      },
+      "required_monitoring": ["心率", "血压", "出血", "肾功能", "超声左房与瓣膜评估"],
+      "related_procedures": ["electrical_cardioversion", "tee_guided_strategy", "ablation"],
+      "source_ids": ["acc_af_2023"]
+    },
+    {
+      "id": "svt_termination_pathway",
+      "name_zh": "室上速终止路径",
+      "typical_indications": ["规则窄 QRS 心动过速"],
+      "core_steps": ["评估稳定性", "迷走刺激", "腺苷", "必要时电复律", "复发评估消融"],
+      "candidate_drugs": {
+        "antiarrhythmics": ["adenosine", "metoprolol_succinate", "amiodarone"]
+      },
+      "required_monitoring": ["连续心电图", "血压", "除颤设备就绪"],
+      "source_ids": ["acc_svt_2015"]
+    },
+    {
+      "id": "cabg_perioperative_pathway",
+      "name_zh": "CABG 围手术期路径",
+      "typical_indications": ["左主干或复杂多支病变", "PCI 不适宜", "Heart Team 决策倾向 CABG"],
+      "core_steps": [
+        "术前完成冠脉解剖、心功能、合并症和桥血管评估",
+        "术中关注体外循环、心肌保护和吻合质量",
+        "术后重点识别低心排、出血、房颤、AKI、感染和 graft failure"
+      ],
+      "candidate_drugs": {
+        "antiplatelets": ["aspirin"],
+        "statins": ["atorvastatin_high_intensity"],
+        "hemodynamic_support": ["norepinephrine", "dobutamine"],
+        "arrhythmia_support": ["amiodarone"]
+      },
+      "required_monitoring": ["有创动脉压", "尿量", "乳酸", "引流量", "超声", "连续心律监护"],
+      "source_ids": ["acc_revascularization_2021"]
+    },
+    {
+      "id": "valve_intervention_pathway",
+      "name_zh": "瓣膜介入/外科评估路径",
+      "typical_indications": ["重度 AS", "重度 MR", "重度多瓣膜病", "感染性心内膜炎并发症"],
+      "core_steps": [
+        "确认严重程度和症状关联",
+        "用超声、CT 和风险评分完成 Heart Team 决策",
+        "在外科、介入和保守方案间平衡预后与侵袭性"
+      ],
+      "candidate_drugs": {
+        "heart_failure_support": ["furosemide", "dobutamine", "norepinephrine"],
+        "anticoagulation_selected_cases": ["warfarin"]
+      },
+      "required_monitoring": ["超声随访", "心功能", "症状负担", "围术期并发症"],
+      "related_procedures": ["echo", "tee", "valve_surgery", "tavr"],
+      "source_ids": ["acc_valve_2020", "esc_endocarditis_2023"]
+    },
+    {
+      "id": "aortic_emergency_pathway",
+      "name_zh": "主动脉急症路径",
+      "typical_indications": ["疑似夹层", "破裂风险主动脉瘤", "复杂 B 型夹层"],
+      "core_steps": [
+        "立即控压控心率并镇痛",
+        "快速完成 CTA/TEE 等成像",
+        "同步联系主动脉团队，决定紧急外科或 TEVAR"
+      ],
+      "candidate_drugs": {
+        "blood_pressure_control": ["metoprolol_succinate"],
+        "shock_support": ["norepinephrine"]
+      },
+      "required_monitoring": ["有创血压", "灌注", "神经状态", "肢体血供", "乳酸"],
+      "related_procedures": ["cta", "aortic_surgery", "tevar"],
+      "source_ids": ["acc_aortic_2022"]
+    }
+  ],
+  "procedure_templates": [
+    {
+      "id": "cag_pci_template",
+      "name_zh": "冠脉造影/PCI 模板",
+      "common_candidate_plans": ["acs_initial_evaluation", "stemi_reperfusion_pathway"],
+      "key_prechecks": ["肾功能", "出血风险", "过敏史", "抗栓方案", "入路评估"],
+      "common_risks": ["穿刺并发症", "造影剂肾损伤", "无复流", "支架内血栓", "急性闭塞"],
+      "source_ids": ["acc_acs_2025", "acc_revascularization_2021"]
+    },
+    {
+      "id": "cabg_template",
+      "name_zh": "冠脉搭桥模板",
+      "common_candidate_plans": ["cabg_perioperative_pathway"],
+      "key_prechecks": ["冠脉解剖", "LVEF", "桥血管条件", "脑卒中/肾损伤风险", "抗栓停药计划"],
+      "common_risks": ["出血", "低心排", "术后房颤", "AKI", "感染", "桥血管问题"],
+      "source_ids": ["acc_revascularization_2021"]
+    },
+    {
+      "id": "valve_surgery_template",
+      "name_zh": "瓣膜外科模板",
+      "common_candidate_plans": ["valve_intervention_pathway"],
+      "key_prechecks": ["病变机制", "修复可行性", "右心功能", "肺动脉压", "感染性心内膜炎并发症"],
+      "common_risks": ["低心排", "房室传导阻滞", "瓣周漏", "出血", "感染"],
+      "source_ids": ["acc_valve_2020", "esc_endocarditis_2023"]
+    },
+    {
+      "id": "tavr_template",
+      "name_zh": "TAVR 模板",
+      "common_candidate_plans": ["valve_intervention_pathway"],
+      "key_prechecks": ["CT 解剖", "瓣环测量", "冠脉开口风险", "传导阻滞风险", "血管入路"],
+      "common_risks": ["传导阻滞需起搏", "脑卒中", "瓣周漏", "血管并发症"],
+      "source_ids": ["acc_valve_2020"]
+    },
+    {
+      "id": "aortic_surgery_template",
+      "name_zh": "主动脉手术/TEVAR 模板",
+      "common_candidate_plans": ["aortic_emergency_pathway"],
+      "key_prechecks": ["CTA 解剖", "分型", "分支灌注", "脑脊髓缺血风险", "转运和团队就位"],
+      "common_risks": ["破裂", "低灌注综合征", "脑卒中", "脊髓缺血", "肾损伤"],
+      "source_ids": ["acc_aortic_2022"]
+    },
+    {
+      "id": "electrical_cardioversion_template",
+      "name_zh": "电复律模板",
+      "common_candidate_plans": ["af_rate_rhythm_anticoag", "svt_termination_pathway"],
+      "key_prechecks": ["是否不稳定", "抗凝状态", "血栓评估", "镇静准备"],
+      "common_risks": ["血栓栓塞", "复律后缓慢心律", "皮肤灼伤", "短暂心肌抑制"],
+      "source_ids": ["acc_af_2023", "acc_svt_2015"]
+    }
+  ],
+  "safety_rules": [
+    {
+      "id": "stemi_reperfusion_priority",
+      "name_zh": "STEMI 再灌注优先规则",
+      "trigger_conditions": ["stemi"],
+      "action": "一旦明确 STEMI，应优先启动最短时间的再灌注通道，不应因低价值检查延误导管室决策。",
+      "source_ids": ["acc_acs_2025", "esc_acs_2023"]
+    },
+    {
+      "id": "troponin_requires_context",
+      "name_zh": "肌钙蛋白需结合动态与场景解释",
+      "trigger_conditions": ["hs_troponin_elevated"],
+      "action": "肌钙蛋白升高提示心肌损伤，但不能单独等同于 1 型心肌梗死，必须结合症状、心电图、动态变化和病因背景。",
+      "source_ids": ["acc_acs_2025", "esc_acs_2023"]
+    },
+    {
+      "id": "hemodynamic_instability_requires_urgent_rhythm_action",
+      "name_zh": "血流动力学不稳定性心律失常需紧急复律/除颤",
+      "trigger_conditions": ["arrhythmia_with_instability"],
+      "action": "任何伴低血压、休克、持续胸痛、肺水肿或意识障碍的快速心律失常，都应优先走紧急电治疗通道。",
+      "source_ids": ["acc_af_2023", "acc_svt_2015"]
+    },
+    {
+      "id": "af_anticoag_should_use_stroke_risk_assessment",
+      "name_zh": "房颤抗凝需卒中风险分层",
+      "trigger_conditions": ["atrial_fibrillation"],
+      "action": "房颤长期抗凝决策需基于卒中风险评估，并同步识别可纠正的出血风险因素，而不是仅凭房颤是否有症状。",
+      "source_ids": ["acc_af_2023"]
+    },
+    {
+      "id": "active_bleeding_reassess_antithrombotics",
+      "name_zh": "活动性出血需重评抗栓强度",
+      "trigger_conditions": ["active_bleeding", "postop_bleeding"],
+      "action": "出现活动性出血或术后显著出血时，需立刻重评抗凝、抗血小板和再干预优先级。",
+      "source_ids": ["acc_acs_2025", "acc_revascularization_2021"]
+    },
+    {
+      "id": "renal_function_review_for_anticoag_and_hf_drugs",
+      "name_zh": "肾功能需纳入抗凝与心衰药物剂量审核",
+      "trigger_conditions": ["ckd", "acute_kidney_injury"],
+      "action": "低分子肝素、DOAC、地高辛、利尿剂和 RAAS 通路药物均应结合肾功能重新评估剂量和风险。",
+      "source_ids": ["acc_af_2023", "acc_hf_2022", "esc_pe_2019"]
+    },
+    {
+      "id": "hyperkalemia_review_for_raas_and_mra",
+      "name_zh": "高钾时重评 RAAS/MRA 治疗",
+      "trigger_conditions": ["hyperkalemia"],
+      "action": "血钾升高时需复核 ARNI/ARB/MRA 等药物，必要时纠正电解质后再决定是否继续、减量或暂停。",
+      "source_ids": ["acc_hf_2022", "esc_hf_2021"]
+    },
+    {
+      "id": "acute_hf_requires_wet_warm_profile_assessment",
+      "name_zh": "急性心衰需先做充血/灌注分型",
+      "trigger_conditions": ["acute_decompensated_heart_failure"],
+      "action": "急性心衰处理前应先区分湿/干、暖/冷，以避免将单纯减充血和低灌注休克混为一谈。",
+      "source_ids": ["acc_hf_2022", "esc_hf_2021"]
+    },
+    {
+      "id": "nitrate_hypotension_right_ventricle_caution",
+      "name_zh": "硝酸酯用于低血压或右室梗死时需谨慎",
+      "trigger_conditions": ["hypotension", "right_ventricular_infarction"],
+      "action": "右室梗死、前负荷依赖或明显低血压时，不应机械套用硝酸酯方案。",
+      "source_ids": ["acc_acs_2025", "esc_acs_2023"]
+    },
+    {
+      "id": "mechanical_valve_doac_avoidance",
+      "name_zh": "机械瓣患者避免误用 DOAC",
+      "trigger_conditions": ["mechanical_valve"],
+      "action": "机械瓣抗凝通常不应直接套用 DOAC 路径，应按机械瓣策略管理并严格 INR 随访。",
+      "source_ids": ["acc_af_2023", "acc_valve_2020"]
+    },
+    {
+      "id": "post_cardiac_surgery_tamponade_watch",
+      "name_zh": "心外术后警惕心包填塞",
+      "trigger_conditions": ["post_cardiac_surgery_hypotension", "drain_output_change"],
+      "action": "术后低血压、引流异常、中心静脉压上升或低心排时，需尽快排查心包填塞或需再次探查的机械原因。",
+      "source_ids": ["acc_revascularization_2021", "acc_valve_2020"]
+    },
+    {
+      "id": "aortic_dissection_bp_hr_control",
+      "name_zh": "主动脉夹层需优先控心率与控压",
+      "trigger_conditions": ["acute_aortic_dissection"],
+      "action": "疑似或确诊主动脉夹层时，成像和手术协调应与快速控压控心率同步进行。",
+      "source_ids": ["acc_aortic_2022"]
+    },
+    {
+      "id": "infective_endocarditis_team_based_management",
+      "name_zh": "感染性心内膜炎强调团队管理",
+      "trigger_conditions": ["infective_endocarditis"],
+      "action": "感染性心内膜炎不应仅按单一感染病程处理，需同步纳入血培养、超声、栓塞、外科指征和器械相关问题。",
+      "source_ids": ["esc_endocarditis_2023"]
+    }
+  ],
+  "contraindication_catalog": [
+    {
+      "id": "contra_active_major_bleeding",
+      "name_zh": "活动性重大出血",
+      "related_drugs": ["aspirin", "clopidogrel", "ticagrelor", "unfractionated_heparin", "enoxaparin", "apixaban", "rivaroxaban", "warfarin"],
+      "risk_type": "absolute_or_high_priority"
+    },
+    {
+      "id": "contra_mechanical_valve_doac",
+      "name_zh": "机械瓣不适用 DOAC 常规路径",
+      "related_drugs": ["apixaban", "rivaroxaban"],
+      "risk_type": "high_priority"
+    },
+    {
+      "id": "contra_severe_bradycardia_beta_blocker",
+      "name_zh": "显著缓慢心律/高传导阻滞时慎用 β 阻滞剂",
+      "related_drugs": ["metoprolol_succinate"],
+      "risk_type": "high_priority"
+    },
+    {
+      "id": "contra_hyperkalemia_mra_raas",
+      "name_zh": "高钾血症时慎用 MRA/RAAS 通路药物",
+      "related_drugs": ["spironolactone", "sacubitril_valsartan", "valsartan"],
+      "risk_type": "high_priority"
+    },
+    {
+      "id": "contra_hypotension_nitrates",
+      "name_zh": "低血压或前负荷依赖时慎用硝酸酯",
+      "related_drugs": ["nitroglycerin"],
+      "risk_type": "high_priority"
+    },
+    {
+      "id": "contra_renal_impairment_digoxin_accumulation",
+      "name_zh": "肾功能不全时地高辛蓄积风险",
+      "related_drugs": ["digoxin"],
+      "risk_type": "high_priority"
+    }
+  ],
+  "comorbidity_rules": [
+    {
+      "id": "ckd_review",
+      "name_zh": "慢性肾病审核规则",
+      "trigger_terms": ["慢性肾病", "CKD", "肾功能不全"],
+      "notes": [
+        "影响造影决策、抗凝剂量、利尿反应和心衰药物耐受性。",
+        "需在介入、外科和病房阶段重复评估，而不是仅入院一次。"
+      ]
+    },
+    {
+      "id": "diabetes_review",
+      "name_zh": "糖尿病审核规则",
+      "trigger_terms": ["糖尿病", "diabetes mellitus"],
+      "notes": [
+        "影响冠脉重建方式选择、感染风险和长期二级预防。",
+        "使用 SGLT2 抑制剂者需有围手术期停药计划。"
+      ]
+    },
+    {
+      "id": "copd_review",
+      "name_zh": "COPD/哮喘审核规则",
+      "trigger_terms": ["COPD", "慢阻肺", "哮喘", "asthma"],
+      "notes": [
+        "β 阻滞剂并非绝对禁忌，但需结合表型和耐受性选择。",
+        "急性气促鉴别时需区分心源性与肺源性主导。"
+      ]
+    },
+    {
+      "id": "frailty_review",
+      "name_zh": "衰弱审核规则",
+      "trigger_terms": ["衰弱", "frailty", "高龄"],
+      "notes": [
+        "影响 TAVR 与外科选择、康复能力和随访目标。",
+        "应进入 shared decision-making，而非仅作为放弃治疗理由。"
+      ]
+    },
+    {
+      "id": "stroke_history_review",
+      "name_zh": "卒中病史审核规则",
+      "trigger_terms": ["脑梗", "脑卒中", "TIA", "stroke"],
+      "notes": [
+        "影响房颤抗凝强度和围术期脑保护策略。",
+        "近期出血性卒中场景需与抗栓及手术时间窗一起重评。"
+      ]
+    }
+  ],
+  "emergency_algorithms": [
+    {
+      "id": "cardiogenic_shock_algorithm",
+      "name_zh": "心源性休克算法",
+      "trigger_features": ["低血压", "低灌注", "乳酸升高", "尿量减少", "冷湿"],
+      "key_actions": [
+        "快速识别病因：ACS、机械并发症、终末期心衰、右心衰、术后问题",
+        "同步完成监测升级、超声评估和再灌注/纠因",
+        "视情况使用升压药、正性肌力药和机械循环支持"
+      ],
+      "common_candidate_plans": ["stemi_reperfusion_pathway", "acute_hf_decongestion", "cabg_perioperative_pathway"],
+      "source_ids": ["acc_hf_2022", "acc_acs_2025"]
+    },
+    {
+      "id": "unstable_tachyarrhythmia_algorithm",
+      "name_zh": "不稳定快速性心律失常算法",
+      "trigger_features": ["低血压", "胸痛", "肺水肿", "意识障碍"],
+      "key_actions": [
+        "先判断有脉还是无脉",
+        "有脉不稳定优先同步电复律",
+        "无脉立即除颤和高级生命支持"
+      ],
+      "source_ids": ["acc_af_2023", "acc_svt_2015"]
+    },
+    {
+      "id": "unstable_bradyarrhythmia_algorithm",
+      "name_zh": "不稳定缓慢性心律失常算法",
+      "trigger_features": ["晕厥", "低血压", "休克", "急性心衰"],
+      "key_actions": [
+        "识别可逆诱因如缺血、电解质紊乱、药物过量",
+        "准备临时起搏和高级通路",
+        "持续症状或不可逆传导病变者评估永久起搏"
+      ],
+      "source_ids": ["acc_af_2023"]
+    },
+    {
+      "id": "acute_aortic_syndrome_algorithm",
+      "name_zh": "急性主动脉综合征算法",
+      "trigger_features": ["撕裂样胸背痛", "血压差", "灌注缺失", "休克"],
+      "key_actions": [
+        "在怀疑阶段就联系主动脉团队",
+        "不要因等待低价值结果延误 CTA/TEE",
+        "A 型倾向紧急手术，复杂 B 型评估 TEVAR"
+      ],
+      "source_ids": ["acc_aortic_2022"]
+    },
+    {
+      "id": "post_cardiac_surgery_crash_algorithm",
+      "name_zh": "心外术后循环崩溃算法",
+      "trigger_features": ["低心排", "乳酸进行性上升", "引流异常", "超声提示填塞或严重室功能障碍"],
+      "key_actions": [
+        "先排查机械性可逆原因：填塞、吻合口/桥血管/瓣膜问题",
+        "超声与外科床旁评估要同步进行",
+        "必要时再次开胸、导管室或机械循环支持"
+      ],
+      "source_ids": ["acc_revascularization_2021", "acc_valve_2020"]
+    }
+  ],
+  "postop_cardiac_surgery_events": [
+    {
+      "id": "postop_af",
+      "name_zh": "心外术后房颤",
+      "related_drugs": ["amiodarone", "metoprolol_succinate"],
+      "notes": ["常见且影响住院天数、卒中风险和血流动力学；需结合出血风险决定抗凝时机。"]
+    },
+    {
+      "id": "postop_bleeding",
+      "name_zh": "术后出血",
+      "related_drugs": ["aspirin", "unfractionated_heparin", "warfarin"],
+      "notes": ["需区分凝血障碍与机械性出血，必要时尽快再次探查。"]
+    },
+    {
+      "id": "postop_low_output",
+      "name_zh": "术后低心排",
+      "related_drugs": ["dobutamine", "norepinephrine"],
+      "notes": ["应同步排查右心衰、填塞、瓣膜问题、桥血管问题和容量误判。"]
+    },
+    {
+      "id": "postop_conduction_disturbance",
+      "name_zh": "术后传导阻滞",
+      "related_drugs": [],
+      "notes": ["主动脉瓣和 TAVR 场景尤其常见，需评估临时或永久起搏。"]
+    }
+  ],
+  "drug_interactions": [
+    {
+      "id": "dual_or_triple_antithrombotic_bleeding",
+      "name_zh": "联合抗栓出血风险叠加",
+      "drug_ids": ["aspirin", "clopidogrel", "ticagrelor", "apixaban", "rivaroxaban", "warfarin", "unfractionated_heparin", "enoxaparin"],
+      "effect": "抗血小板与抗凝联用时出血风险显著增加，需要明确适应证、期限和减法策略。"
+    },
+    {
+      "id": "amiodarone_warfarin",
+      "name_zh": "胺碘酮增加华法林作用",
+      "drug_ids": ["amiodarone", "warfarin"],
+      "effect": "INR 可能升高，需更密切监测。"
+    },
+    {
+      "id": "amiodarone_digoxin",
+      "name_zh": "胺碘酮提高地高辛暴露",
+      "drug_ids": ["amiodarone", "digoxin"],
+      "effect": "增加地高辛蓄积和中毒风险。"
+    },
+    {
+      "id": "spironolactone_raas_hyperkalemia",
+      "name_zh": "MRA 与 RAAS 联用高钾风险",
+      "drug_ids": ["spironolactone", "sacubitril_valsartan", "valsartan"],
+      "effect": "联合时可带来更强获益，也显著提高高钾和肾功能恶化风险。"
+    },
+    {
+      "id": "beta_blocker_digoxin_bradycardia",
+      "name_zh": "β 阻滞剂与地高辛可叠加减慢心率",
+      "drug_ids": ["metoprolol_succinate", "digoxin"],
+      "effect": "增加缓慢心律和传导阻滞风险。"
+    },
+    {
+      "id": "nitrate_pde5_hypotension",
+      "name_zh": "硝酸酯与 PDE5 抑制剂低血压相互作用",
+      "drug_ids": ["nitroglycerin"],
+      "effect": "近期使用 PDE5 抑制剂时合用硝酸酯可导致严重低血压。"
+    }
+  ],
+  "followup_recommendations": [
+    {
+      "id": "acs_secondary_prevention",
+      "name_zh": "ACS 出院后二级预防",
+      "core_items": [
+        "核对 DAPT 和停药期限",
+        "高强度降脂与 LDL-C 目标管理",
+        "戒烟、运动、心脏康复",
+        "复评心功能和残余缺血"
+      ],
+      "source_ids": ["acc_acs_2025", "acc_revascularization_2021"]
+    },
+    {
+      "id": "hf_followup",
+      "name_zh": "心衰随访",
+      "core_items": [
+        "追踪体重、血压、心率、症状和容量状态",
+        "逐步优化 GDMT",
+        "复查肾功能和电解质",
+        "必要时复查超声心动图"
+      ],
+      "source_ids": ["acc_hf_2022", "esc_hf_2021"]
+    },
+    {
+      "id": "af_followup",
+      "name_zh": "房颤随访",
+      "core_items": [
+        "复核卒中风险、出血风险和抗凝依从性",
+        "评估控率是否达标和症状负担",
+        "复律后评估复发和消融指征",
+        "管理体重、血压、睡眠呼吸暂停和饮酒"
+      ],
+      "source_ids": ["acc_af_2023"]
+    },
+    {
+      "id": "post_cardiac_surgery_followup",
+      "name_zh": "心外术后随访",
+      "core_items": [
+        "伤口和感染评估",
+        "心功能、瓣膜/桥血管相关评估",
+        "抗栓和传导系统复核",
+        "康复、营养和再住院风险管理"
+      ],
+      "source_ids": ["acc_revascularization_2021", "acc_valve_2020", "acc_aortic_2022"]
+    }
+  ],
+  "knowledge_graph": {
+    "enabled": true,
+    "description": "Graph retrieval config for cardiology. Strongly related entities receive higher edge weights and are jointly recalled first.",
+    "edge_weights": {
+      "cluster_to_condition": 0.85,
+      "template_to_plan": 0.95,
+      "emergency_to_plan": 0.95,
+      "condition_to_plan": 0.85,
+      "plan_to_drug": 0.9,
+      "condition_to_drug": 0.85,
+      "contra_to_drug": 0.9,
+      "comorbidity_to_rule": 0.75
+    },
+    "condition_plan_edges": {
+      "stemi": ["stemi_reperfusion_pathway", "acs_initial_evaluation"],
+      "nste_acs": ["acs_initial_evaluation"],
+      "chronic_coronary_syndrome": ["acs_initial_evaluation"],
+      "acute_decompensated_heart_failure": ["acute_hf_decongestion"],
+      "hfrEF": ["hfrEF_gdmt_buildout", "acute_hf_decongestion"],
+      "hfpEF": ["acute_hf_decongestion"],
+      "atrial_fibrillation": ["af_rate_rhythm_anticoag"],
+      "supraventricular_tachycardia": ["svt_termination_pathway"],
+      "acute_aortic_dissection": ["aortic_emergency_pathway"],
+      "ascending_aortic_aneurysm": ["aortic_emergency_pathway"],
+      "severe_aortic_stenosis": ["valve_intervention_pathway"],
+      "severe_mitral_regurgitation": ["valve_intervention_pathway"],
+      "multivessel_cad_for_revascularization": ["cabg_perioperative_pathway"],
+      "post_cardiotomy_low_output_syndrome": ["cabg_perioperative_pathway"]
+    },
+    "retrieval": {
+      "max_hops": 2,
+      "decay": 0.72,
+      "min_edge_weight": 0.2,
+      "max_candidate_plans": 6,
+      "max_related_drugs": 10,
+      "plan_expand_threshold": 0.45,
+      "rule_expand_threshold": 0.3,
+      "drug_expand_threshold": 0.3,
+      "cluster_seed_weight": 0.9,
+      "condition_seed_weight": 1.0,
+      "template_seed_weight": 0.9,
+      "emergency_seed_weight": 0.95,
+      "plan_seed_weight": 1.0,
+      "rule_seed_weight": 0.9,
+      "contra_seed_weight": 0.85,
+      "comorbidity_seed_weight": 0.8
+    }
+  }
+}
