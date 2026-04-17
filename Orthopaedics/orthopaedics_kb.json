@@ -1,0 +1,390 @@
+﻿{
+  "metadata": {
+    "name": "orthopedics_reference_kb",
+    "schema_version": "0.1.0",
+    "language": "zh-CN",
+    "last_updated": "2026-04-10",
+    "status": "scaffold",
+    "intended_use": "education_and_reference_only",
+    "warning": "本库用于结构化骨科评估与围手术期思路示例，不能替代骨科、麻醉科、影像科或 MDT 的正式临床决策。",
+    "clinical_inference_note": "部分鉴别诊断路径、风险提示和检查建议是基于指南框架与标准骨科临床推理整理的结构化推断，必须结合真实病史、查体、影像和本院流程复核。"
+  },
+  "source_registry": {
+    "asa_overview": {
+      "title": "ASA Physical Status Classification System",
+      "organization": "Anestix / ASA reference overview",
+      "url": "https://www.anestix.com/en/dashboard/guide-list/guide/asa"
+    },
+    "acs_nsqip_risk": {
+      "title": "ACS NSQIP Surgical Risk Calculator",
+      "organization": "American College of Surgeons",
+      "url": "https://riskcalculator.facs.org/RiskCalculator/"
+    },
+    "nice_vte": {
+      "title": "Venous thromboembolism in over 16s",
+      "organization": "NICE",
+      "url": "https://www.nice.org.uk/guidance/ng89"
+    },
+    "nice_preop_tests": {
+      "title": "Routine preoperative tests for elective surgery",
+      "organization": "NICE",
+      "url": "https://www.nice.org.uk/guidance/ng45"
+    },
+    "nice_joint_replacement": {
+      "title": "Joint replacement (primary): hip, knee and shoulder",
+      "organization": "NICE",
+      "url": "https://www.nice.org.uk/guidance/ng157"
+    },
+    "nice_hip_fracture": {
+      "title": "Hip fracture: management",
+      "organization": "NICE",
+      "url": "https://www.nice.org.uk/guidance/cg124"
+    },
+    "nice_noncomplex_fracture": {
+      "title": "Fractures (non-complex): assessment and management",
+      "organization": "NICE",
+      "url": "https://www.nice.org.uk/guidance/ng38"
+    },
+    "nice_fragility_fracture": {
+      "title": "Osteoporosis: assessing the risk of fragility fracture",
+      "organization": "NICE",
+      "url": "https://www.nice.org.uk/guidance/cg146"
+    },
+    "nice_surgical_site": {
+      "title": "Surgical site infections: prevention and treatment",
+      "organization": "NICE",
+      "url": "https://www.nice.org.uk/guidance/ng125"
+    },
+    "aaos_hip_fracture": {
+      "title": "AAOS Updates CPG for Management of Hip Fractures in Older Adults",
+      "organization": "AAOS",
+      "url": "https://www.aaos.org/aaos-home//newsroom/press-releases/aaos-updates-guideline-management-hip-fractures-in-older-adults/"
+    },
+    "pumch_geriatric_periop": {
+      "title": "老年患者围手术期管理北京协和医院专家共识",
+      "organization": "北京协和医院",
+      "url": "https://xhyxzz.pumch.cn/cn/article/pdf/preview/10.3969/j.issn.1674-9081.2018.01.008.pdf"
+    },
+    "xy_preanesthesia_consensus": {
+      "title": "麻醉前访视和评估专家共识（2020版）",
+      "organization": "湘雅麻醉与重症医学网",
+      "url": "https://xyane2.csu.edu.cn/info/1083/2690.htm"
+    }
+  },
+  "asa_physical_status": [
+    {
+      "id": "ASA_I",
+      "name_zh": "ASA I",
+      "definition_zh": "正常健康患者",
+      "source_ids": ["asa_overview"]
+    },
+    {
+      "id": "ASA_II",
+      "name_zh": "ASA II",
+      "definition_zh": "伴轻度系统性疾病患者",
+      "source_ids": ["asa_overview"]
+    },
+    {
+      "id": "ASA_III",
+      "name_zh": "ASA III",
+      "definition_zh": "伴重度系统性疾病患者",
+      "source_ids": ["asa_overview"]
+    },
+    {
+      "id": "ASA_IV",
+      "name_zh": "ASA IV",
+      "definition_zh": "伴持续威胁生命的重度系统性疾病患者",
+      "source_ids": ["asa_overview"]
+    }
+  ],
+  "orthopedic_pathways": [
+    {
+      "id": "acute_trauma_fracture_dislocation",
+      "name_zh": "急性创伤/骨折脱位路径",
+      "typical_presentations": ["跌倒或外伤后疼痛肿胀", "畸形", "不能负重", "疑似骨折脱位"],
+      "candidate_condition_ids": [
+        "hip_fracture_or_occult_hip_fracture",
+        "compartment_syndrome_or_acute_limb_ischaemia",
+        "ligament_or_meniscus_injury",
+        "pathologic_fracture_or_bone_tumor"
+      ],
+      "default_triage": "urgent"
+    },
+    {
+      "id": "degenerative_joint_disease",
+      "name_zh": "退变性关节疾病路径",
+      "typical_presentations": ["慢性膝痛", "慢性髋痛", "晨僵较短", "活动后加重"],
+      "candidate_condition_ids": [
+        "knee_osteoarthritis",
+        "hip_osteoarthritis"
+      ],
+      "default_triage": "routine"
+    },
+    {
+      "id": "spine_neurologic_pathway",
+      "name_zh": "脊柱/神经压迫路径",
+      "typical_presentations": ["腰腿放射痛", "麻木无力", "间歇性跛行", "大小便功能改变"],
+      "candidate_condition_ids": [
+        "lumbar_disc_or_stenosis_with_radiculopathy",
+        "cauda_equina_or_progressive_neurologic_compromise"
+      ],
+      "default_triage": "expedited"
+    },
+    {
+      "id": "infection_inflammatory_pathway",
+      "name_zh": "感染/炎症路径",
+      "typical_presentations": ["发热", "关节红肿热痛", "伤口渗液", "CRP 或白细胞升高"],
+      "candidate_condition_ids": [
+        "septic_arthritis_or_osteomyelitis",
+        "prosthetic_joint_or_implant_infection"
+      ],
+      "default_triage": "urgent"
+    },
+    {
+      "id": "tumor_pathologic_pathway",
+      "name_zh": "骨肿瘤/病理骨折路径",
+      "typical_presentations": ["夜间痛", "静息痛", "低能量骨折", "恶性肿瘤病史"],
+      "candidate_condition_ids": [
+        "pathologic_fracture_or_bone_tumor"
+      ],
+      "default_triage": "expedited"
+    }
+  ],
+  "orthopedic_conditions": [
+    {
+      "id": "hip_fracture_or_occult_hip_fracture",
+      "name_zh": "髋部骨折/隐匿性髋部骨折",
+      "typical_clues": ["高龄跌倒后髋部或腹股沟痛", "不能负重", "X 线阴性但临床高度怀疑"],
+      "preferred_imaging": ["骨盆/髋部 X 线", "若 X 线阴性但怀疑高则 MRI；24 小时内无法 MRI 时考虑 CT"],
+      "initial_management_principles": ["立即镇痛", "限制负重", "快速评估手术适应证与围术期优化"],
+      "common_complications": ["DVT/PE", "谵妄", "肺部并发症", "失能"],
+      "source_ids": ["nice_hip_fracture", "aaos_hip_fracture", "pumch_geriatric_periop"]
+    },
+    {
+      "id": "knee_osteoarthritis",
+      "name_zh": "膝骨关节炎",
+      "typical_clues": ["慢性膝痛", "上下楼疼痛", "活动后加重", "晨僵短于 30 分钟"],
+      "preferred_imaging": ["负重位膝关节 X 线", "必要时 MRI 评估合并病变"],
+      "initial_management_principles": ["保守治疗优先", "功能受限严重时评估关节置换"],
+      "common_complications": ["跌倒风险增加", "活动受限", "置换后 VTE 或感染"],
+      "source_ids": ["nice_joint_replacement"]
+    },
+    {
+      "id": "hip_osteoarthritis",
+      "name_zh": "髋骨关节炎",
+      "typical_clues": ["腹股沟或臀部慢性痛", "内旋受限", "跛行", "行走后加重"],
+      "preferred_imaging": ["骨盆正位和髋关节 X 线", "必要时 MRI 排除股骨头坏死或隐匿骨折"],
+      "initial_management_principles": ["共享决策讨论保守治疗与置换手术"],
+      "common_complications": ["失能", "跌倒", "置换后脱位或感染"],
+      "source_ids": ["nice_joint_replacement"]
+    },
+    {
+      "id": "lumbar_disc_or_stenosis_with_radiculopathy",
+      "name_zh": "腰椎间盘突出/腰椎管狭窄伴神经根受压",
+      "typical_clues": ["腰腿放射痛", "麻木", "无力", "间歇性跛行"],
+      "preferred_imaging": ["腰椎 MRI"],
+      "initial_management_principles": ["先鉴别是否有马尾或快速进展性神经损害"],
+      "common_complications": ["慢性神经痛", "功能下降", "大小便功能障碍（重症）"],
+      "source_ids": ["pumch_geriatric_periop"]
+    },
+    {
+      "id": "cauda_equina_or_progressive_neurologic_compromise",
+      "name_zh": "马尾综合征/进行性神经功能恶化",
+      "typical_clues": ["尿潴留或失禁", "鞍区麻木", "双下肢无力", "快速进展性神经缺损"],
+      "preferred_imaging": ["急诊 MRI"],
+      "initial_management_principles": ["立即升级至急诊骨科或脊柱专科评估"],
+      "common_complications": ["永久神经损害", "膀胱肠道功能障碍"],
+      "source_ids": ["pumch_geriatric_periop"]
+    },
+    {
+      "id": "septic_arthritis_or_osteomyelitis",
+      "name_zh": "化脓性关节炎/骨髓炎",
+      "typical_clues": ["发热", "关节红肿热痛", "炎症指标升高", "近期侵入操作或菌血症风险"],
+      "preferred_imaging": ["X 线基础评估", "超声评估积液", "MRI 评估骨髓炎范围"],
+      "initial_management_principles": ["尽快完善培养与感染评估，规范取样后进入针对性治疗路径"],
+      "common_complications": ["菌血症", "关节破坏", "败血症"],
+      "source_ids": ["nice_surgical_site", "pumch_geriatric_periop"]
+    },
+    {
+      "id": "prosthetic_joint_or_implant_infection",
+      "name_zh": "人工关节/内固定植入物感染",
+      "typical_clues": ["既往置换或内固定史", "持续疼痛", "伤口渗液", "松动表现"],
+      "preferred_imaging": ["X 线评估位置和松动", "进一步影像由专科决定"],
+      "initial_management_principles": ["尽快联系骨科团队，完善感染指标和培养，单独制定植入物感染处理策略"],
+      "common_complications": ["假体松动", "再手术", "菌血症", "功能丧失"],
+      "source_ids": ["nice_surgical_site", "nice_joint_replacement"]
+    },
+    {
+      "id": "ligament_or_meniscus_injury",
+      "name_zh": "韧带/半月板损伤",
+      "typical_clues": ["扭转伤", "爆裂感", "关节积液", "交锁", "打软腿"],
+      "preferred_imaging": ["X 线排除骨折", "MRI 评估软组织"],
+      "initial_management_principles": ["急性期保护、冰敷、抬高和负重管理，根据功能需求决定后续方案"],
+      "common_complications": ["慢性不稳", "软骨损伤", "继发骨关节炎"],
+      "source_ids": ["nice_noncomplex_fracture"]
+    },
+    {
+      "id": "pathologic_fracture_or_bone_tumor",
+      "name_zh": "病理骨折/骨肿瘤",
+      "typical_clues": ["夜间痛", "静息痛", "恶性肿瘤病史", "低能量骨折", "影像异常"],
+      "preferred_imaging": ["病变节段 X 线", "CT/MRI", "必要时全身分期影像"],
+      "initial_management_principles": ["优先明确病因性质，再定最终固定或肿瘤路径"],
+      "common_complications": ["再骨折", "内固定失败", "肿瘤进展"],
+      "source_ids": ["nice_noncomplex_fracture", "pumch_geriatric_periop"]
+    },
+    {
+      "id": "compartment_syndrome_or_acute_limb_ischaemia",
+      "name_zh": "骨筋膜室综合征/急性肢体缺血",
+      "typical_clues": ["疼痛与体征不成比例", "被动牵伸痛", "苍白", "感觉异常", "脉搏异常"],
+      "preferred_imaging": ["不应因非关键影像延误紧急评估"],
+      "initial_management_principles": ["立即急诊骨科评估，解除过紧固定并持续神经血管复查"],
+      "common_complications": ["缺血坏死", "永久神经损害", "截肢"],
+      "source_ids": ["nice_noncomplex_fracture"]
+    }
+  ],
+  "workup_bundles": [
+    {
+      "id": "acute_trauma_bundle",
+      "name_zh": "急性创伤骨科评估包",
+      "history_points": ["受伤机制与时间", "是否立即不能负重", "开放伤口/污染", "抗凝药物"],
+      "exam_points": ["畸形肿胀", "神经血管检查", "邻近关节", "筋膜室风险"],
+      "labs": ["CBC", "凝血功能", "必要时备血"],
+      "imaging": ["X 线首选", "必要时 CT", "高怀疑隐匿骨折时 MRI/CT"]
+    },
+    {
+      "id": "degenerative_joint_bundle",
+      "name_zh": "退变性关节评估包",
+      "history_points": ["疼痛时长", "步行耐量", "保守治疗史", "日常生活影响"],
+      "exam_points": ["关节活动度", "力线", "积液", "肌力和步态"],
+      "labs": ["拟手术时按围术期分层检查"],
+      "imaging": ["负重位 X 线", "必要时 MRI/超声"]
+    },
+    {
+      "id": "spine_neurologic_bundle",
+      "name_zh": "脊柱神经评估包",
+      "history_points": ["疼痛分布", "麻木无力", "步行距离", "大小便改变", "肿瘤/感染史"],
+      "exam_points": ["肌力感觉反射", "病理反射", "鞍区感觉和括约肌功能（必要时）"],
+      "labs": ["感染或肿瘤可疑时加查相关指标"],
+      "imaging": ["MRI 优先"]
+    },
+    {
+      "id": "infection_bundle",
+      "name_zh": "骨与关节感染评估包",
+      "history_points": ["发热寒战", "近期手术或穿刺", "伤口渗液", "糖尿病/免疫抑制"],
+      "exam_points": ["局部热痛红肿", "伤口与窦道", "全身感染体征"],
+      "labs": ["CBC", "CRP", "ESR", "必要时血培养或关节液培养"],
+      "imaging": ["X 线", "超声评估积液", "MRI 明确范围"]
+    },
+    {
+      "id": "elective_major_ortho_preop_bundle",
+      "name_zh": "择期大型骨科手术术前评估包",
+      "history_points": ["基础疾病控制", "功能状态", "家族史", "抗凝抗血小板药", "吸烟饮酒"],
+      "exam_points": ["ASA 提示", "营养与衰弱", "认知谵妄风险", "手术部位皮肤"],
+      "labs": ["CBC", "肾功能与电解质", "HbA1c（适应证时）", "ECG/凝血按分层决定"],
+      "imaging": ["术区标准化影像", "必要时 CT 模板或长片"]
+    }
+  ],
+  "perioperative_rules": [
+    {
+      "id": "urgent_neurovascular_review",
+      "name_zh": "急诊神经血管/筋膜室复核",
+      "trigger_clues": ["无脉或脉弱", "肢体苍白冰冷", "疼痛不成比例", "进行性感觉运动障碍", "大小便异常"],
+      "recommended_actions": ["立即升级至急诊骨科或相关专科", "重复神经血管检查", "不要因非关键检查延误处理"],
+      "source_ids": ["nice_noncomplex_fracture"]
+    },
+    {
+      "id": "occult_hip_fracture_imaging",
+      "name_zh": "隐匿性髋部骨折影像复核",
+      "trigger_clues": ["高龄跌倒", "髋痛", "不能负重", "初始 X 线阴性但高度怀疑"],
+      "recommended_actions": ["优先 MRI", "24 小时内无法 MRI 或禁忌时考虑 CT"],
+      "source_ids": ["nice_hip_fracture"]
+    },
+    {
+      "id": "fragility_fracture_secondary_prevention",
+      "name_zh": "脆性骨折二级预防评估",
+      "trigger_clues": ["50 岁以上低能量骨折", "骨质疏松病史", "家族髋部骨折史"],
+      "recommended_actions": ["考虑 FRAX 或 QFracture 风险评估", "按路径决定是否 DXA 和骨健康干预"],
+      "source_ids": ["nice_fragility_fracture"]
+    },
+    {
+      "id": "vte_risk_review",
+      "name_zh": "骨科 VTE 风险复核",
+      "trigger_clues": ["下肢制动", "髋膝置换", "骨折手术", "活动受限", "肿瘤"],
+      "recommended_actions": ["尽早评估 VTE 与出血风险", "根据手术类型选择机械或药物预防并复评"],
+      "source_ids": ["nice_vte", "acs_nsqip_risk"]
+    },
+    {
+      "id": "infection_prevention_review",
+      "name_zh": "手术部位感染预防复核",
+      "trigger_clues": ["拟行植入物手术", "糖尿病", "吸烟", "既往切口问题"],
+      "recommended_actions": ["按手术部位感染指南执行预防措施", "术前优化皮肤和血糖管理"],
+      "source_ids": ["nice_surgical_site", "nice_joint_replacement"]
+    },
+    {
+      "id": "joint_replacement_blood_loss_plan",
+      "name_zh": "关节置换失血控制计划",
+      "trigger_clues": ["择期髋膝关节置换", "预计失血较多"],
+      "recommended_actions": ["按肾功能分层考虑氨甲环酸策略", "同步评估贫血与备血"],
+      "source_ids": ["nice_joint_replacement"]
+    },
+    {
+      "id": "geriatric_frailty_review",
+      "name_zh": "老年衰弱/谵妄/功能风险复核",
+      "trigger_clues": ["高龄", "衰弱", "跌倒", "认知下降", "营养不良", "多重用药"],
+      "recommended_actions": ["评估认知、谵妄、营养、功能、跌倒风险和用药，优先 MDT 协作"],
+      "source_ids": ["pumch_geriatric_periop"]
+    },
+    {
+      "id": "preop_history_and_family_review",
+      "name_zh": "术前病史与家族史复核",
+      "trigger_clues": ["拟手术", "过敏史或家族史不完整", "长期用药复杂"],
+      "recommended_actions": ["补齐过敏史、家族史、既往麻醉手术史、吸烟饮酒史和长期用药"],
+      "source_ids": ["xy_preanesthesia_consensus"]
+    },
+    {
+      "id": "preop_test_selection_review",
+      "name_zh": "术前检查分层选择",
+      "trigger_clues": ["择期骨科手术", "ASA II-IV", "心肾糖尿病或呼吸系统共病"],
+      "recommended_actions": ["避免机械性常规加检，按手术级别、ASA 和共病决定 CBC、肾功能、ECG、HbA1c 等"],
+      "source_ids": ["nice_preop_tests"]
+    }
+  ],
+  "complication_catalog": [
+    {
+      "id": "dvt_pe",
+      "name_zh": "深静脉血栓/肺栓塞",
+      "watch_points": ["下肢制动", "置换手术", "高龄", "肿瘤", "既往 VTE"],
+      "source_ids": ["nice_vte", "acs_nsqip_risk"]
+    },
+    {
+      "id": "surgical_site_or_implant_infection",
+      "name_zh": "手术部位感染/植入物感染",
+      "watch_points": ["糖尿病", "吸烟", "营养不良", "切口引流"],
+      "source_ids": ["nice_surgical_site"]
+    },
+    {
+      "id": "compartment_or_neurovascular_failure",
+      "name_zh": "筋膜室综合征/神经血管损伤",
+      "watch_points": ["高能量创伤", "疼痛失控", "脉搏异常", "感觉运动改变"],
+      "source_ids": ["nice_noncomplex_fracture"]
+    },
+    {
+      "id": "nonunion_or_implant_failure",
+      "name_zh": "骨不连/内固定失败/假体问题",
+      "watch_points": ["粉碎骨折", "感染", "病理骨折", "固定稳定性不足"],
+      "source_ids": ["nice_noncomplex_fracture", "nice_joint_replacement"]
+    },
+    {
+      "id": "delirium_and_functional_decline",
+      "name_zh": "谵妄与功能衰退",
+      "watch_points": ["高龄", "认知下降", "感染", "疼痛", "活动受限"],
+      "source_ids": ["pumch_geriatric_periop", "nice_hip_fracture"]
+    },
+    {
+      "id": "major_bleeding_or_transfusion",
+      "name_zh": "围手术期失血/输血风险",
+      "watch_points": ["髋部骨折", "关节置换", "抗凝药物", "贫血"],
+      "source_ids": ["nice_joint_replacement", "acs_nsqip_risk"]
+    }
+  ]
+}
