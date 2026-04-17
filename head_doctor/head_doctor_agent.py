@@ -94,6 +94,17 @@ SPECIALTY_SPECS = {
         "decision_module": "neurosurgery_decision_agent.py",
         "decision_class": "NeurosurgeryDecisionAgent",
     },
+    "orthopaedics": {
+        "label": "骨科",
+        "dir": PROJECT_ROOT / "Orthopaedics",
+        "mapper_module": "patient_mapper_agent.py",
+        "mapper_class": "PatientProfileMapperAgent",
+        "kb_class": "OrthopaedicsKnowledgeBase",
+        "retriever_module": "kb_retriever.py",
+        "retriever_class": "KnowledgeRetriever",
+        "decision_module": "orthopaedics_decision_agent.py",
+        "decision_class": "OrthopaedicsDecisionAgent",
+    },
 }
 
 

@@ -24,6 +24,10 @@ DEFAULT_KB = {
             "specialty": "neurosurgery",
             "keywords": ["颅", "脑", "神经", "脊髓", "头痛", "癫痫", "脑膜", "脑出血", "脑积水", "肿瘤"],
         },
+        {
+            "specialty": "orthopaedics",
+            "keywords": ["骨", "骨折", "关节", "脊柱", "腰腿痛", "髋", "膝", "脱位", "创伤", "不能负重"],
+        },
     ]
 }
 
@@ -88,7 +92,7 @@ class MDTKnowledgeRetriever:
                 )
 
         if not tasks:
-            for specialty in ("anesthesia", "cardiology", "hepatobiliary", "neurosurgery"):
+            for specialty in ("anesthesia", "cardiology", "hepatobiliary", "neurosurgery", "orthopaedics"):
                 tasks.append(
                     {
                         "specialty": specialty,

@@ -204,7 +204,7 @@ class MDTCallAgent:
             "你是 MDT 分诊台 mdt_call，需要根据 head_doctor 汇总出的存疑点，把问题再次下派给最合适的专科 agent。\n"
             "请只返回 JSON，字段固定为：tasks, rationale, priority_summary。\n"
             "- tasks 必须是数组，每个元素包含 specialty, question, reason, priority。\n"
-            "- specialty 只能从 anesthesia, cardiology, hepatobiliary, neurosurgery 中选择。\n"
+            "- specialty 只能从 anesthesia, cardiology, hepatobiliary, neurosurgery, orthopaedics 中选择。\n"
             "- 若多个问题应发给同一专科，可以拆成多个任务。\n"
             "- 不要把最终诊疗结论写在这里，只负责分诊。\n\n"
             f"输入上下文：\n{json.dumps(request_context, ensure_ascii=False, indent=2)}"
@@ -219,7 +219,7 @@ class MDTCallAgent:
             "你是 MDT 分诊台 mdt_call，需要根据患者首轮信息决定应先触发哪些专科 agent。\\n"
             "请只返回 JSON，字段固定为：tasks, rationale, priority_summary。\\n"
             "- tasks 必须是数组，每个元素包含 specialty, reason, priority。\\n"
-            "- specialty 只能从 anesthesia, cardiology, hepatobiliary, neurosurgery 中选择。\\n"
+            "- specialty 只能从 anesthesia, cardiology, hepatobiliary, neurosurgery, orthopaedics 中选择。\\n"
             "- 这是首轮分诊，不负责最终结论。\\n\\n"
             f"输入上下文：\\n{json.dumps(request_context, ensure_ascii=False, indent=2)}"
         )
