@@ -36,6 +36,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
             "anesthesia",
             "cardiology",
             "hepatobiliary",
+            "orthopaedics",
         ],
     },
     "patient_case": {
@@ -70,6 +71,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
             "anesthesia",
             "cardiology",
             "hepatobiliary",
+            "orthopaedics",
         ],
     },
 }
