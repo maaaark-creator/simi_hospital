@@ -25,6 +25,13 @@ from head_doctor.head_doctor_agent import HeadDoctorAgent
 HTML_PATH = PROJECT_ROOT / "mdt_chat_page_v2.html"
 JOBS: dict[str, dict[str, Any]] = {}
 JOBS_LOCK = threading.Lock()
+SPECIALTY_LABELS = {
+    "anesthesia": "麻醉科",
+    "cardiology": "心内科",
+    "hepatobiliary": "肝胆胰外科",
+    "neurosurgery": "神经外科",
+    "orthopaedics": "骨科",
+}
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -41,24 +48,247 @@ def build_parser() -> argparse.ArgumentParser:
 
 def build_answer_text(workflow: dict[str, Any]) -> str:
     final = workflow.get("head_doctor_recommendation", {})
-    case_summary = str(final.get("case_summary") or "").strip()
-    final_plan = final.get("final_plan") or []
-    key_risks = final.get("key_risks") or []
-    next_steps = final.get("next_steps") or []
+    current_assessment = str(final.get("current_assessment") or "").strip()
+    readiness_status = str(final.get("readiness_status") or "").strip()
+    priority_actions = _string_list(final.get("priority_actions"))
+    critical_risks = _string_list(final.get("critical_risks") or final.get("key_risks"))
 
-    lines: list[str] = []
-    if case_summary:
-        lines.append(f"病例总结：{case_summary}")
+    lines: list[str] = ["MDT总体结果", ""]
+    if current_assessment:
+        lines.append("当前判断：")
+        lines.append(current_assessment)
+        lines.append("")
+    if readiness_status:
+        lines.append("当前状态：")
+        lines.append(readiness_status)
+        lines.append("")
+    if priority_actions:
+        lines.append("当前要点：")
+        lines.extend([f"- {item}" for item in priority_actions[:6]])
+        lines.append("")
+    if critical_risks:
+        lines.append("最高风险：")
+        lines.extend([f"- {item}" for item in critical_risks[:4]])
+    normalized_lines = lines if any(line.strip() for line in lines[2:]) else []
+    return "\n".join(normalized_lines) if normalized_lines else "已完成分析，但未返回可展示的结构化结论。"
+
+
+def _extract_text_fragments(value: Any) -> list[str]:
+    if value is None:
+        return []
+    if isinstance(value, str):
+        text = value.strip()
+        return [text] if text else []
+    if isinstance(value, (int, float, bool)):
+        return [str(value)]
+    if isinstance(value, (list, tuple, set)):
+        parts: list[str] = []
+        for item in value:
+            parts.extend(_extract_text_fragments(item))
+        return parts
+    if isinstance(value, dict):
+        ordered_parts: list[str] = []
+        preferred_keys = (
+            "summary",
+            "text",
+            "body",
+            "question",
+            "reason",
+            "description",
+            "preliminary_impression",
+            "patient_summary",
+            "primary_condition_id",
+            "primary_plan_id",
+            "urgency_level",
+            "surgical_readiness",
+            "title",
+            "label",
+            "name_zh",
+            "name",
+            "term",
+            "value",
+            "source_text",
+            "items",
+        )
+        for key in preferred_keys:
+            if key in value:
+                ordered_parts.extend(_extract_text_fragments(value.get(key)))
+        return ordered_parts
+    return []
+
+
+def _string_list(value: Any) -> list[str]:
+    return _dedupe_keep_order(_extract_text_fragments(value))
+
+
+def _dedupe_keep_order(items: list[str], limit: int | None = None) -> list[str]:
+    result: list[str] = []
+    seen: set[str] = set()
+    for item in items:
+        text = str(item).strip()
+        if not text:
+            continue
+        key = text.casefold()
+        if key in seen:
+            continue
+        seen.add(key)
+        result.append(text)
+        if limit is not None and len(result) >= limit:
+            break
+    return result
+
+
+def _pick_first_text(*values: Any) -> str:
+    for value in values:
+        text = str(value or "").strip()
+        if text:
+            return text
+    return ""
+
+
+def _looks_blocking_issue(text: str) -> bool:
+    lowered = text.lower()
+    blocking_terms = (
+        "不明",
+        "未明",
+        "未完成",
+        "未明确",
+        "无法",
+        "不能",
+        "需补",
+        "需明确",
+        "需先",
+        "待补",
+        "缺乏",
+        "缺少",
+        "insufficient",
+        "cannot",
+        "unable",
+        "need more",
+        "not ready",
+    )
+    return any(term in lowered for term in blocking_terms)
+
+
+def _looks_postop_watchpoint(text: str) -> bool:
+    lowered = text.lower()
+    return any(term in lowered for term in ("术后", "复查", "监测", "观察", "icu", "dvt", "并发症", "随访"))
+
+
+def _build_specialty_briefs(workflow: dict[str, Any]) -> list[dict[str, Any]]:
+    opinions = workflow.get("specialty_opinions", {})
+    briefs: list[dict[str, Any]] = []
+    for specialty_id, payload in opinions.items():
+        decision = payload.get("decision_result", {})
+        retrieval = payload.get("retrieval_result", {})
+        need_more = _dedupe_keep_order(
+            _string_list(decision.get("need_more_info")) + _string_list(retrieval.get("missing_information")),
+            limit=3,
+        )
+        next_actions = _dedupe_keep_order(
+            _string_list(decision.get("management_recommendations"))
+            + _string_list(decision.get("recommended_workup"))
+            + _string_list(decision.get("perioperative_considerations")),
+            limit=3,
+        )
+        unique_points = _dedupe_keep_order(
+            _string_list(decision.get("risk_flags"))
+            + _string_list(decision.get("diagnostic_considerations"))
+            + _string_list(decision.get("recommended_collaboration")),
+            limit=3,
+        )
+        readiness = str(decision.get("surgical_readiness") or "").strip().lower()
+        is_blocking = (
+            bool(need_more)
+            or readiness.startswith("not_")
+            or "not_ready" in readiness
+            or "needs_more_information" in str(decision.get("urgency_level") or "")
+        )
+        specialty_label = SPECIALTY_LABELS.get(str(specialty_id), str(payload.get("specialty_label") or specialty_id))
+        position = _pick_first_text(
+            decision.get("preliminary_impression"),
+            decision.get("primary_condition_id"),
+            decision.get("primary_plan_id"),
+        )
+        if not position:
+            position = (
+                "当前仍需先补齐关键信息后，才能形成本科明确判断。"
+                if is_blocking
+                else "当前已形成本科初步判断，可并行推进下一阶段处理。"
+            )
+        briefs.append(
+            {
+                "specialty": str(specialty_id),
+                "specialty_label": specialty_label,
+                "diagnosis_or_position": position,
+                "missing_key_info": need_more,
+                "next_actions": next_actions or ["按本科建议继续完成围术期评估与处置。"],
+                "key_point": unique_points[0] if unique_points else "",
+            }
+        )
+    return briefs
+
+
+def _derive_current_assessment(final: dict[str, Any], has_blocking_issues: bool) -> str:
+    current_assessment = str(final.get("current_assessment") or "").strip()
+    if current_assessment:
+        return current_assessment
+
+    specialty_consensus = _string_list(final.get("specialty_consensus"))
+    if specialty_consensus:
+        return "；".join(specialty_consensus[:2])
+
+    final_plan = _string_list(final.get("final_plan"))
     if final_plan:
-        lines.append("建议方案：")
-        lines.extend([f"- {str(item)}" for item in final_plan[:8]])
-    if key_risks:
-        lines.append("关键风险：")
-        lines.extend([f"- {str(item)}" for item in key_risks[:5]])
-    if next_steps:
-        lines.append("下一步：")
-        lines.extend([f"- {str(item)}" for item in next_steps[:6]])
-    return "\n".join(lines) if lines else "已完成分析，但未返回可展示的结构化结论。"
+        return final_plan[0]
+
+    if has_blocking_issues:
+        return "当前已形成初步 MDT 方向，但仍存在关键阻塞点，未补齐前不宜直接放行最终路径。"
+    return "当前已形成初步 MDT 共识，可进入下一阶段处理。"
+
+
+def _enrich_workflow_for_display(workflow: dict[str, Any]) -> dict[str, Any]:
+    final = workflow.get("head_doctor_recommendation")
+    if not isinstance(final, dict):
+        return workflow
+
+    key_risks = _string_list(final.get("key_risks"))
+    next_steps = _string_list(final.get("next_steps"))
+    final_plan = _string_list(final.get("final_plan"))
+    unresolved = _string_list(final.get("unresolved_issues"))
+    uncertainty_items = workflow.get("uncertainty_review", {}).get("unresolved_items", [])
+    specialty_briefs = _build_specialty_briefs(workflow)
+    blocking_candidates = list(unresolved)
+    for item in uncertainty_items:
+        question = str(item.get("question") or "").strip()
+        if question and (_looks_blocking_issue(question) or str(item.get("priority") or "").lower() == "high"):
+            blocking_candidates.append(question)
+    for brief in specialty_briefs:
+        for data_needed in brief.get("missing_key_info", []):
+            if data_needed and _looks_blocking_issue(str(data_needed)):
+                blocking_candidates.append(str(data_needed))
+
+    priority_actions = _dedupe_keep_order(blocking_candidates + next_steps + final_plan, limit=6)
+
+    postop_watchpoints = [item for item in final_plan + next_steps if _looks_postop_watchpoint(item)]
+    readiness_status = str(final.get("readiness_status") or "").strip()
+    if not readiness_status:
+        readiness_status = (
+            "当前可进入快速术前优化流程，但存在明确阻塞点，未补齐前不建议直接放行最终路径。"
+            if blocking_candidates
+            else "当前未见新的主要阻塞点，可按 MDT 共识推进下一阶段处理。"
+        )
+
+    deduped_blocking = _dedupe_keep_order(blocking_candidates, limit=5)
+    final["current_assessment"] = _derive_current_assessment(final, has_blocking_issues=bool(deduped_blocking))
+    final["readiness_status"] = readiness_status
+    final["priority_actions"] = priority_actions
+    final["critical_risks"] = _dedupe_keep_order(key_risks, limit=4)
+    final["postop_watchpoints"] = _dedupe_keep_order(postop_watchpoints, limit=5)
+    final["specialty_briefs"] = specialty_briefs
+
+    workflow["head_doctor_recommendation"] = final
+    return workflow
 
 
 def _to_json_safe(value: Any) -> Any:
@@ -170,6 +400,7 @@ def _run_workflow_job(job_id: str, payload: dict[str, Any]) -> None:
             use_api_for_clarification=use_api_for_clarification,
             use_api_for_final=use_api_for_final,
         )
+        workflow = _enrich_workflow_for_display(workflow)
         reply = build_answer_text(workflow)
 
         with JOBS_LOCK:

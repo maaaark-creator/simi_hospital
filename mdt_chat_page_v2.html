@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8" />
@@ -58,6 +58,14 @@
     .msg.user { align-self: flex-end; background: #eaf1ff; border-color: #c9dbff; }
     .msg.assistant { align-self: flex-start; background: #fff; }
     .msg.system { align-self: center; color: var(--muted); background: #f9fafb; font-size: 12px; }
+    .msg.rich {
+      padding: 0;
+      overflow: hidden;
+      white-space: normal;
+      background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+      border-color: #cfd8e3;
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+    }
     .composer { border-top: 1px solid var(--line); padding: 12px; display: grid; gap: 10px; }
     textarea {
       width: 100%;
@@ -104,27 +112,379 @@
     .evt.error { border-left: 3px solid #b00020; }
     details { border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; background: #fcfdff; }
     details summary { cursor: pointer; font-weight: 600; font-size: 13px; }
-    pre {
-      margin: 8px 0 0;
-      max-height: 260px;
-      overflow: auto;
-      background: #0f172a;
-      color: #dbe7ff;
-      border-radius: 8px;
-      padding: 10px;
-      font-size: 12px;
-      line-height: 1.4;
-      white-space: pre-wrap;
-      word-break: break-word;
+    .report {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      padding: 18px;
     }
-    @media (max-width: 980px) { .app { grid-template-columns: 1fr; } .chat, .side { min-height: auto; } }
+    .report.compact {
+      padding: 14px;
+      gap: 14px;
+    }
+    .report-header {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    .report-kicker {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: #1d4ed8;
+      text-transform: uppercase;
+    }
+    .report-title {
+      margin: 0;
+      font-size: 24px;
+      line-height: 1.25;
+      font-weight: 800;
+      color: #0f172a;
+    }
+    .report.compact .report-title {
+      font-size: 20px;
+    }
+    .report-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .report-chip {
+      display: inline-flex;
+      align-items: center;
+      padding: 5px 10px;
+      border-radius: 999px;
+      background: #eef4ff;
+      border: 1px solid #cddcff;
+      color: #1e3a8a;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .report-summary {
+      margin: 0;
+      padding: 14px 16px;
+      border-radius: 12px;
+      background: linear-gradient(180deg, #f8fbff 0%, #f3f7ff 100%);
+      border: 1px solid #dbe6f7;
+      line-height: 1.75;
+      color: #1f2937;
+    }
+    .report-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .report.compact .report-grid {
+      grid-template-columns: 1fr;
+    }
+    .report-section {
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      background: #ffffff;
+      padding: 14px 16px;
+    }
+    .report-section.full {
+      grid-column: 1 / -1;
+    }
+    .section-heading {
+      margin: 0 0 10px;
+      font-size: 16px;
+      line-height: 1.4;
+      font-weight: 800;
+      color: #0f172a;
+    }
+    .section-text {
+      margin: 0;
+      color: #334155;
+      line-height: 1.7;
+      white-space: pre-wrap;
+    }
+    .section-empty {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+    .section-list {
+      margin: 0;
+      padding-left: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      color: #1f2937;
+      line-height: 1.7;
+    }
+    .item-label {
+      font-weight: 800;
+      color: #0f172a;
+    }
+    .workflow-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding-top: 10px;
+    }
+    .workflow-lead {
+      margin: 0;
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: linear-gradient(180deg, #f8fbff 0%, #f3f7ff 100%);
+      border: 1px solid #dbe6f7;
+      color: #1f2937;
+      line-height: 1.75;
+    }
+    .workflow-stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .workflow-stat {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #f8fafc;
+      border: 1px solid #dbe3ee;
+      color: #334155;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .workflow-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .workflow-grid.single {
+      grid-template-columns: 1fr;
+    }
+    .workflow-card {
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      background: #ffffff;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .workflow-card.full {
+      grid-column: 1 / -1;
+    }
+    .workflow-card-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      align-items: flex-start;
+    }
+    .workflow-card-title {
+      margin: 0;
+      font-size: 15px;
+      line-height: 1.4;
+      font-weight: 800;
+      color: #0f172a;
+    }
+    .workflow-card-subtitle {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    .workflow-card-body {
+      margin: 0;
+      color: #1f2937;
+      line-height: 1.7;
+      white-space: pre-wrap;
+    }
+    .workflow-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .workflow-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: #f8fafc;
+      border: 1px solid #dbe3ee;
+      color: #334155;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .workflow-badge.priority-high,
+    .workflow-badge.status-high,
+    .workflow-badge.level-high {
+      background: #fff1f2;
+      border-color: #fecdd3;
+      color: #be123c;
+    }
+    .workflow-badge.priority-medium,
+    .workflow-badge.status-medium,
+    .workflow-badge.level-medium {
+      background: #fff7ed;
+      border-color: #fed7aa;
+      color: #c2410c;
+    }
+    .workflow-badge.priority-low,
+    .workflow-badge.status-low,
+    .workflow-badge.level-low {
+      background: #eff6ff;
+      border-color: #bfdbfe;
+      color: #1d4ed8;
+    }
+    .workflow-badge.success {
+      background: #ecfdf3;
+      border-color: #b7ebc6;
+      color: #15803d;
+    }
+    .workflow-badge.warn {
+      background: #fff7ed;
+      border-color: #fed7aa;
+      color: #c2410c;
+    }
+    .workflow-badge.muted {
+      background: #f8fafc;
+      border-color: #dbe3ee;
+      color: #64748b;
+    }
+    .workflow-points {
+      margin: 0;
+      padding-left: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      color: #1f2937;
+      line-height: 1.7;
+    }
+    .workflow-quote {
+      margin: 0;
+      padding-left: 12px;
+      border-left: 3px solid #dbe6f7;
+      color: #334155;
+      line-height: 1.75;
+      white-space: pre-wrap;
+    }
+    .workflow-raw {
+      margin-top: 2px;
+    }
+    .workflow-empty {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+    .report-overview {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .overview-card {
+      border: 1px solid #dbe3ee;
+      border-radius: 12px;
+      padding: 14px 16px;
+      background: #ffffff;
+    }
+    .overview-card.full {
+      grid-column: 1 / -1;
+    }
+    .overview-title {
+      margin: 0 0 8px;
+      font-size: 13px;
+      font-weight: 800;
+      color: #475569;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .overview-body {
+      margin: 0;
+      color: #0f172a;
+      line-height: 1.75;
+    }
+    .specialty-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .specialty-details {
+      padding: 0;
+      overflow: hidden;
+      background: #ffffff;
+    }
+    .specialty-summary {
+      list-style: none;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 14px 16px;
+      background: linear-gradient(180deg, #f8fbff 0%, #f4f8ff 100%);
+    }
+    .specialty-summary::-webkit-details-marker {
+      display: none;
+    }
+    .specialty-summary-main {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 0;
+    }
+    .specialty-summary-title {
+      font-size: 15px;
+      font-weight: 800;
+      color: #0f172a;
+    }
+    .specialty-summary-text {
+      color: #475569;
+      font-size: 13px;
+      line-height: 1.6;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .specialty-summary-toggle {
+      flex-shrink: 0;
+      color: #1d4ed8;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .specialty-content {
+      padding: 14px;
+      border-top: 1px solid #e5e7eb;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .specialty-footer {
+      display: flex;
+      justify-content: flex-end;
+    }
+    .workflow-collapse-btn {
+      padding: 6px 10px;
+      font-size: 12px;
+      color: #334155;
+    }
+    .process-trace {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    @media (max-width: 980px) {
+      .app { grid-template-columns: 1fr; }
+      .chat, .side { min-height: auto; }
+      .report-grid { grid-template-columns: 1fr; }
+      .report-overview { grid-template-columns: 1fr; }
+      .workflow-grid { grid-template-columns: 1fr; }
+      .report-title { font-size: 22px; }
+    }
   </style>
 </head>
 <body>
   <div class="app">
     <section class="chat">
       <div class="head">
-        <span>MDT Chat</span>
+        <span>MDT 会诊助手</span>
         <span id="status" class="chip">Ready</span>
       </div>
       <div id="messages" class="messages">
@@ -144,7 +504,9 @@
     </section>
 
     <aside class="side">
-      <div class="head">流程输出</div>
+      <div class="head">
+        <span>流程输出</span>
+      </div>
       <div class="side-body">
         <div class="side-block">
           <div class="side-title">实时进度</div>
@@ -164,55 +526,916 @@
     const statusEl = document.getElementById("status");
     const progressList = document.getElementById("progressList");
     const sectionContainer = document.getElementById("sectionContainer");
+    let latestWorkflowData = null;
+    let latestProgressEvents = [];
+    let liveProcessTraceHost = null;
+    let liveProcessTraceExpanded = new Set();
 
-    function addMessage(role, text) {
-      const el = document.createElement("div");
-      el.className = `msg ${role}`;
-      el.textContent = text;
+    function appendMessageElement(el) {
       messages.appendChild(el);
       messages.scrollTop = messages.scrollHeight;
       return el;
     }
 
-    function fmt(obj) {
-      try { return JSON.stringify(obj, null, 2); } catch { return String(obj); }
+    function addMessage(role, text) {
+      const el = document.createElement("div");
+      el.className = `msg ${role}`;
+      el.textContent = text;
+      return appendMessageElement(el);
+    }
+
+    function addRichMessage(role, contentNode) {
+      const el = document.createElement("div");
+      el.className = `msg ${role} rich`;
+      el.appendChild(contentNode);
+      return appendMessageElement(el);
+    }
+
+    function extractTextFragments(value) {
+      if (value === null || value === undefined) return [];
+      if (typeof value === "string") {
+        const text = value.trim();
+        return text ? [text] : [];
+      }
+      if (typeof value === "number" || typeof value === "boolean") return [String(value)];
+      if (Array.isArray(value)) return value.flatMap((item) => extractTextFragments(item));
+      if (typeof value === "object") {
+        const preferredKeys = [
+          "summary",
+          "text",
+          "body",
+          "question",
+          "reason",
+          "description",
+          "preliminary_impression",
+          "patient_summary",
+          "primary_condition_id",
+          "primary_plan_id",
+          "urgency_level",
+          "surgical_readiness",
+          "title",
+          "label",
+          "name_zh",
+          "name",
+          "term",
+          "value",
+          "source_text",
+          "items",
+        ];
+        const parts = [];
+        preferredKeys.forEach((key) => {
+          if (Object.prototype.hasOwnProperty.call(value, key)) {
+            parts.push(...extractTextFragments(value[key]));
+          }
+        });
+        return parts;
+      }
+      return [];
+    }
+
+    function toList(value) {
+      return dedupeTexts(extractTextFragments(value), 999);
+    }
+
+    function splitLabeledText(text) {
+      const normalized = String(text || "").trim();
+      const match = normalized.match(/^([^:：]{1,28})[:：]\s*(.+)$/);
+      if (!match) return { label: "", body: normalized };
+      return { label: match[1].trim(), body: match[2].trim() };
+    }
+
+    function createReportSection(title, options = {}) {
+      const section = document.createElement("section");
+      section.className = `report-section${options.full ? " full" : ""}`;
+      const heading = document.createElement("h3");
+      heading.className = "section-heading";
+      heading.textContent = title;
+      section.appendChild(heading);
+
+      if (options.text) {
+        const p = document.createElement("p");
+        p.className = "section-text";
+        p.textContent = options.text;
+        section.appendChild(p);
+        return section;
+      }
+
+      const items = options.items || [];
+      if (!items.length) {
+        const empty = document.createElement("p");
+        empty.className = "section-empty";
+        empty.textContent = options.emptyText || "暂无内容。";
+        section.appendChild(empty);
+        return section;
+      }
+
+      const list = document.createElement("ul");
+      list.className = "section-list";
+      items.forEach((item) => {
+        const displayText = asText(item) || toList(item).join("；");
+        if (!displayText) return;
+        const li = document.createElement("li");
+        const parsed = splitLabeledText(displayText);
+        if (parsed.label && parsed.body) {
+          const strong = document.createElement("strong");
+          strong.className = "item-label";
+          strong.textContent = `${parsed.label}：`;
+          li.appendChild(strong);
+          li.append(` ${parsed.body}`);
+        } else {
+          li.textContent = displayText;
+        }
+        list.appendChild(li);
+      });
+      section.appendChild(list);
+      return section;
+    }
+
+    const SPECIALTY_LABELS = {
+      anesthesia: "麻醉科",
+      cardiology: "心内科",
+      hepatobiliary: "肝胆胰外科",
+      neurosurgery: "神经外科",
+      orthopaedics: "骨科",
+    };
+
+    function getSpecialtyLabel(id, fallback = "") {
+      const key = String(id || "").trim();
+      return SPECIALTY_LABELS[key] || fallback || key || "相关专科";
+    }
+
+    function ensureList(value) {
+      if (Array.isArray(value)) return value.filter((item) => item !== null && item !== undefined);
+      if (value === null || value === undefined || value === "") return [];
+      return [value];
+    }
+
+    function asText(value) {
+      return toList(value)[0] || "";
+    }
+
+    function createWorkflowBadge(text, tone = "") {
+      const badge = document.createElement("span");
+      badge.className = `workflow-badge${tone ? ` ${tone}` : ""}`;
+      badge.textContent = text;
+      return badge;
+    }
+
+    function createWorkflowCard(title, options = {}) {
+      const card = document.createElement("section");
+      card.className = `workflow-card${options.full ? " full" : ""}`;
+
+      const header = document.createElement("div");
+      header.className = "workflow-card-header";
+      const headerText = document.createElement("div");
+      const h = document.createElement("h4");
+      h.className = "workflow-card-title";
+      h.textContent = title;
+      headerText.appendChild(h);
+      if (options.subtitle) {
+        const subtitle = document.createElement("p");
+        subtitle.className = "workflow-card-subtitle";
+        subtitle.textContent = options.subtitle;
+        headerText.appendChild(subtitle);
+      }
+      header.appendChild(headerText);
+      if (options.badges && options.badges.length) {
+        const badgeWrap = document.createElement("div");
+        badgeWrap.className = "workflow-badges";
+        options.badges.forEach((badge) => badgeWrap.appendChild(badge));
+        header.appendChild(badgeWrap);
+      }
+      card.appendChild(header);
+
+      if (options.body) {
+        const body = document.createElement("p");
+        body.className = "workflow-card-body";
+        body.textContent = options.body;
+        card.appendChild(body);
+      }
+
+      if (options.quote) {
+        const quote = document.createElement("p");
+        quote.className = "workflow-quote";
+        quote.textContent = options.quote;
+        card.appendChild(quote);
+      }
+
+      if (options.items && options.items.length) {
+        const list = document.createElement("ul");
+        list.className = "workflow-points";
+        options.items.forEach((item) => {
+          const displayText = asText(item) || toList(item).join("；");
+          if (!displayText) return;
+          const li = document.createElement("li");
+          li.textContent = displayText;
+          list.appendChild(li);
+        });
+        card.appendChild(list);
+      }
+
+      return card;
+    }
+
+    function createWorkflowPanel(leadText = "") {
+      const panel = document.createElement("article");
+      panel.className = "workflow-panel";
+      if (leadText) {
+        const lead = document.createElement("p");
+        lead.className = "workflow-lead";
+        lead.textContent = leadText;
+        panel.appendChild(lead);
+      }
+      return panel;
+    }
+
+    function createOverviewCard(title, body, options = {}) {
+      const card = document.createElement("section");
+      card.className = `overview-card${options.full ? " full" : ""}`;
+      const heading = document.createElement("h3");
+      heading.className = "overview-title";
+      heading.textContent = title;
+      card.appendChild(heading);
+      if (options.items && options.items.length) {
+        const list = document.createElement("ul");
+        list.className = "section-list";
+        options.items.forEach((item) => {
+          const displayText = asText(item) || toList(item).join("；");
+          if (!displayText) return;
+          const li = document.createElement("li");
+          li.textContent = displayText;
+          list.appendChild(li);
+        });
+        card.appendChild(list);
+      } else {
+        const content = document.createElement("p");
+        content.className = "overview-body";
+        content.textContent = body || "暂无内容。";
+        card.appendChild(content);
+      }
+      return card;
+    }
+
+    function appendPanelCollapseAction(panel, label = "收起本板块") {
+      const footer = document.createElement("div");
+      footer.className = "specialty-footer";
+      const collapseBtn = document.createElement("button");
+      collapseBtn.type = "button";
+      collapseBtn.className = "btn workflow-collapse-btn";
+      collapseBtn.textContent = label;
+      collapseBtn.addEventListener("click", () => {
+        const details = panel.closest("details");
+        if (details) details.open = false;
+      });
+      footer.appendChild(collapseBtn);
+      panel.appendChild(footer);
+    }
+
+    function appendWorkflowStats(parent, stats) {
+      const validStats = (stats || []).filter((item) => item && item.value !== undefined && item.value !== null && item.value !== "");
+      if (!validStats.length) return;
+      const wrap = document.createElement("div");
+      wrap.className = "workflow-stats";
+      validStats.forEach((item) => {
+        const stat = document.createElement("div");
+        stat.className = "workflow-stat";
+        stat.textContent = `${item.label} ${item.value}`;
+        wrap.appendChild(stat);
+      });
+      parent.appendChild(wrap);
+    }
+
+
+
+    function normalizePriority(value) {
+      if (typeof value === "number") return { label: `优先级 ${value}`, tone: value <= 1 ? "priority-high" : value === 2 ? "priority-medium" : "priority-low" };
+      const text = String(value || "").trim().toLowerCase();
+      if (!text) return { label: "优先级未注明", tone: "muted" };
+      if (text === "high") return { label: "高优先级", tone: "priority-high" };
+      if (text === "medium") return { label: "中优先级", tone: "priority-medium" };
+      if (text === "low") return { label: "低优先级", tone: "priority-low" };
+      return { label: `优先级 ${value}`, tone: "muted" };
+    }
+
+    function looksBlockingIssue(text) {
+      const normalized = String(text || "").toLowerCase();
+      return ["不明", "未明", "未明确", "无法", "不能", "需补", "需明确", "待补", "缺少", "insufficient", "cannot", "unable", "not ready"].some((term) => normalized.includes(term));
+    }
+
+    function dedupeTexts(items, limit = 999) {
+      const result = [];
+      const seen = new Set();
+      extractTextFragments(items).forEach((item) => {
+        const text = String(item || "").trim();
+        if (!text) return;
+        const key = text.toLowerCase();
+        if (seen.has(key) || result.length >= limit) return;
+        seen.add(key);
+        result.push(text);
+      });
+      return result;
+    }
+
+    function formatClinicalEvent(ev) {
+      const label = String(ev?.label || "");
+      const type = String(ev?.type || "system");
+      const lower = label.toLowerCase();
+      const specialtyMap = {
+        anesthesia: "麻醉科",
+        cardiology: "心内科",
+        hepatobiliary: "肝胆胰外科",
+        neurosurgery: "神经外科",
+        orthopaedics: "骨科",
+      };
+
+      if (lower === "workflow/start") return type === "done" ? "MDT 会诊已启动" : "正在启动 MDT 会诊";
+      if (lower === "workflow/done") return "已完成 MDT 总结";
+      if (lower === "workflow/error") return ev?.message || "MDT 工作流执行失败";
+      if (lower === "mdt_call/initial_triage_planning") return type === "done" ? "已完成首轮分诊" : "正在完成首轮分诊";
+      if (lower === "mdt_call/follow_up_planning") return type === "done" ? "已生成二次追问分配" : "正在整理二次追问";
+      if (lower === "head_doctor/model_panel_review") return type === "done" ? "已完成最终整合" : "正在整合会诊结论";
+      if (lower.startsWith("head_doctor/model_review")) return type === "done" ? "已完成多模型复核" : "正在进行多模型复核";
+
+      for (const [key, value] of Object.entries(specialtyMap)) {
+        if (lower === `${key}/structuring`) return type === "done" ? `${value}病例结构化已完成` : `正在整理${value}病例信息`;
+        if (lower === `${key}/entity_linking`) return type === "done" ? `${value}重点问题已识别` : `正在识别${value}重点问题`;
+        if (lower === `${key}/retrieval`) return type === "done" ? `${value}知识检索已完成` : `正在检索${value}参考依据`;
+        if (lower === `${key}/decision`) return type === "done" ? `${value}意见已返回` : `正在生成${value}意见`;
+        if (lower === `${key}/clarification`) return type === "done" ? `${value}补充意见已返回` : `正在追问${value}补充意见`;
+      }
+
+      return ev?.message || label || "流程更新";
+    }
+
+    function getTraceEvents(events) {
+      return ensureList(events).filter((ev) => {
+        const label = String(ev?.label || "").toLowerCase();
+        return ev?.type === "done" && ev?.output && label !== "workflow/done" && label !== "workflow/start";
+      });
+    }
+
+    function getTraceOwnerKey(ev) {
+      const label = String(ev?.label || "").toLowerCase();
+      if (label.startsWith("anesthesia/")) return "anesthesia";
+      if (label.startsWith("cardiology/")) return "cardiology";
+      if (label.startsWith("hepatobiliary/")) return "hepatobiliary";
+      if (label.startsWith("neurosurgery/")) return "neurosurgery";
+      if (label.startsWith("orthopaedics/")) return "orthopaedics";
+      if (label.startsWith("mdt_call/") || label.startsWith("head_doctor/")) return "mdt";
+      return "other";
+    }
+
+    function getTraceOwnerLabel(owner) {
+      if (owner === "mdt") return "MDT总控";
+      if (owner === "other") return "流程支持";
+      return getSpecialtyLabel(owner, owner);
+    }
+
+    function getLatestTraceOutput(group, suffix) {
+      const matched = group.events.filter((ev) => String(ev?.label || "").toLowerCase().endsWith(suffix));
+      return matched.length ? (matched[matched.length - 1]?.output || {}) : {};
+    }
+
+    function buildTraceGroups(events) {
+      const groups = [];
+      const groupMap = new Map();
+      getTraceEvents(events).forEach((ev) => {
+        const owner = getTraceOwnerKey(ev);
+        if (!groupMap.has(owner)) {
+          const group = { owner, label: getTraceOwnerLabel(owner), events: [] };
+          groupMap.set(owner, group);
+          groups.push(group);
+        }
+        groupMap.get(owner).events.push(ev);
+      });
+      return groups;
+    }
+
+    function buildTraceNarrative(group) {
+      const entity = getLatestTraceOutput(group, "/entity_linking");
+      const retrieval = getLatestTraceOutput(group, "/retrieval");
+      const decision = getLatestTraceOutput(group, "/decision");
+      const clarification = getLatestTraceOutput(group, "/clarification");
+      const planning = group.events[group.events.length - 1]?.output || {};
+
+      const evidence = dedupeTexts([
+        entity?.normalized_terms,
+        retrieval?.matched_medical_conditions,
+        retrieval?.matched_surgical_conditions,
+        retrieval?.matched_safety_rules,
+        retrieval?.triggered_red_flags,
+        retrieval?.procedure_keywords,
+        retrieval?.risk_keywords,
+        retrieval?.normalized_terms,
+      ], 2);
+      const judgement = asText(decision?.preliminary_impression)
+        || asText(decision?.patient_summary)
+        || asText(decision?.summary)
+        || asText(clarification?.summary)
+        || asText(planning?.summary)
+        || "当前更适合先完成进一步判断";
+      const nextActions = dedupeTexts([
+        decision?.management_recommendations,
+        decision?.recommended_workup,
+        decision?.perioperative_considerations,
+        clarification?.management_recommendations,
+        clarification?.recommended_workup,
+        planning?.next_steps,
+        planning?.final_plan,
+      ], 2);
+      const supplements = dedupeTexts([
+        decision?.need_more_info,
+        retrieval?.missing_information,
+        clarification?.need_more_info,
+      ], 2);
+      const evidenceLead = evidence.length ? `根据病人病例中${evidence.join("、")}` : "根据病人病例中的现有信息";
+      const supportLead = group.owner === "mdt" ? "分诊规则和多学科协同经验" : "专科资料和围术期经验";
+      const thoughtParts = [`${evidenceLead}，结合${supportLead}，我认为${judgement}。`];
+      if (nextActions[0]) thoughtParts.push(`当前更建议先做${nextActions[0]}。`);
+      if (supplements[0]) thoughtParts.push(`为保险起见，建议补充${supplements[0]}。`);
+      return {
+        summary: nextActions[0] || judgement,
+        thought: thoughtParts.join(""),
+        judgement,
+        nextActions,
+        supplements,
+        stepCount: group.events.length,
+      };
+    }
+
+    function buildLiveProcessTraceCard(events) {
+      const groups = buildTraceGroups(events);
+      const report = document.createElement("article");
+      report.className = "report";
+
+      const header = document.createElement("header");
+      header.className = "report-header";
+      const kicker = document.createElement("div");
+      kicker.className = "report-kicker";
+      kicker.textContent = "Live Process";
+      const title = document.createElement("h2");
+      title.className = "report-title";
+      title.textContent = "过程输出";
+      const meta = document.createElement("div");
+      meta.className = "report-meta";
+      const chip = document.createElement("span");
+      chip.className = "report-chip";
+      chip.textContent = groups.length ? `已返回科室 ${groups.length} 个` : "等待节点返回";
+      meta.appendChild(chip);
+      header.appendChild(kicker);
+      header.appendChild(title);
+      header.appendChild(meta);
+      report.appendChild(header);
+
+      if (!groups.length) {
+        report.appendChild(createReportSection("等待首个流程节点", {
+          text: "工作流开始后，这里会按科室逐步补充中间思考。默认收起，需要时再展开查看。",
+          full: true,
+        }));
+        return report;
+      }
+
+      const section = document.createElement("section");
+      section.className = "report-section full";
+      const heading = document.createElement("h3");
+      heading.className = "section-heading";
+      heading.textContent = "实时过程";
+      section.appendChild(heading);
+      const lead = document.createElement("p");
+      lead.className = "section-text";
+      lead.textContent = "以下内容按科室聚合显示，默认收起，需要时展开即可。";
+      section.appendChild(lead);
+      const stack = document.createElement("div");
+      stack.className = "specialty-stack";
+      groups.forEach((group) => {
+        const narrative = buildTraceNarrative(group);
+        const details = document.createElement("details");
+        details.className = "specialty-details";
+        details.open = liveProcessTraceExpanded.has(group.owner);
+
+        const summary = document.createElement("summary");
+        summary.className = "specialty-summary";
+        const summaryMain = document.createElement("div");
+        summaryMain.className = "specialty-summary-main";
+        const summaryTitle = document.createElement("div");
+        summaryTitle.className = "specialty-summary-title";
+        summaryTitle.textContent = group.label;
+        const summaryText = document.createElement("div");
+        summaryText.className = "specialty-summary-text";
+        summaryText.textContent = narrative.summary || `已完成 ${narrative.stepCount} 个过程节点`;
+        const summaryToggle = document.createElement("div");
+        summaryToggle.className = "specialty-summary-toggle";
+        summaryToggle.textContent = details.open ? "收起" : "展开思考";
+        summaryMain.appendChild(summaryTitle);
+        summaryMain.appendChild(summaryText);
+        summary.appendChild(summaryMain);
+        summary.appendChild(summaryToggle);
+        details.appendChild(summary);
+
+        const content = document.createElement("div");
+        content.className = "specialty-content";
+        content.appendChild(createWorkflowCard("中间思考", {
+          body: narrative.thought,
+          full: true,
+        }));
+        if (narrative.judgement) {
+          content.appendChild(createWorkflowCard("当前判断", {
+            body: narrative.judgement,
+            full: true,
+          }));
+        }
+        if (narrative.nextActions.length) {
+          content.appendChild(createWorkflowCard("建议下一步", {
+            items: narrative.nextActions,
+            full: true,
+          }));
+        }
+        if (narrative.supplements.length) {
+          content.appendChild(createWorkflowCard("建议补充", {
+            items: narrative.supplements,
+            full: true,
+          }));
+        }
+        const footer = document.createElement("div");
+        footer.className = "specialty-footer";
+        const collapseBtn = document.createElement("button");
+        collapseBtn.type = "button";
+        collapseBtn.className = "btn workflow-collapse-btn";
+        collapseBtn.textContent = "收起思考过程";
+        collapseBtn.addEventListener("click", () => {
+          details.open = false;
+        });
+        footer.appendChild(collapseBtn);
+        content.appendChild(footer);
+        details.appendChild(content);
+        details.addEventListener("toggle", () => {
+          summaryToggle.textContent = details.open ? "收起" : "展开思考";
+          if (details.open) {
+            liveProcessTraceExpanded.add(group.owner);
+          } else {
+            liveProcessTraceExpanded.delete(group.owner);
+          }
+        });
+        stack.appendChild(details);
+      });
+      section.appendChild(stack);
+      report.appendChild(section);
+      return report;
+    }
+
+    function renderLiveProcessTrace() {
+      if (!liveProcessTraceHost) return;
+      liveProcessTraceHost.replaceChildren(buildLiveProcessTraceCard(latestProgressEvents));
+    }
+
+    function renderProgressEvents() {
+      progressList.innerHTML = "";
+      if (!latestProgressEvents.length) {
+        progressList.innerHTML = '<div class="chip">等待一次会话结果</div>';
+        return;
+      }
+      latestProgressEvents.forEach((ev) => {
+        const row = document.createElement("div");
+        row.className = `evt ${ev.type || "system"}`;
+        const clinicalLabel = formatClinicalEvent(ev);
+        if (ev.type === "start") {
+          row.textContent = `[START] ${clinicalLabel} | ${ev.label || ""}`;
+        } else if (ev.type === "done") {
+          row.textContent = `[DONE ] ${clinicalLabel} -> ${ev.duration_seconds || 0}s | ${ev.label || ""}`;
+        } else if (ev.type === "error") {
+          row.textContent = `[ERROR] ${clinicalLabel}`;
+        } else {
+          row.textContent = `[INFO ] ${clinicalLabel}`;
+        }
+        progressList.appendChild(row);
+      });
+      progressList.scrollTop = progressList.scrollHeight;
+    }
+
+    function renderInitialTriageSection(data) {
+      const requestPreview = asText(data?.request_context?.patient_summary?.text_preview)
+        || asText(data?.request_context?.patient_input)
+        || "未提供患者摘要。";
+      const tasks = ensureList(data?.dispatch_plan?.tasks);
+      const lead = asText(data?.summary)
+        || `系统根据当前输入“${requestPreview}”决定首轮优先介入的专科。`;
+      const panel = createWorkflowPanel(lead);
+
+      appendWorkflowStats(panel, [
+        { label: "患者摘要", value: requestPreview.length > 18 ? `${requestPreview.slice(0, 18)}...` : requestPreview },
+        { label: "触发专科", value: tasks.length },
+      ]);
+
+      const grid = document.createElement("div");
+      grid.className = "workflow-grid";
+      tasks.forEach((task, index) => {
+        const priority = normalizePriority(task?.priority);
+        grid.appendChild(createWorkflowCard(
+          `${index + 1}. ${getSpecialtyLabel(task?.specialty)}`,
+          {
+            subtitle: "首轮介入理由",
+            body: asText(task?.reason) || "未返回分诊原因。",
+            badges: [createWorkflowBadge(priority.label, priority.tone)],
+          },
+        ));
+      });
+
+      if (!tasks.length) {
+        const empty = document.createElement("p");
+        empty.className = "workflow-empty";
+        empty.textContent = "本轮未返回可展示的首轮分诊任务。";
+        panel.appendChild(empty);
+      } else {
+        panel.appendChild(grid);
+      }
+      return panel;
+    }
+
+    function renderSpecialtyOpinionsSection(data, workflowData) {
+      const finalBriefs = ensureList(workflowData?.head_doctor_recommendation?.specialty_briefs);
+      const specialties = finalBriefs.length ? finalBriefs : Object.entries(data || {}).map(([specialtyId, payload]) => {
+        const decision = payload?.decision_result || {};
+        const retrieval = payload?.retrieval_result || {};
+        const needed = toList(decision?.need_more_info || retrieval?.missing_information);
+        const immediate = toList(decision?.management_recommendations || decision?.recommended_workup || decision?.perioperative_considerations || needed);
+        return {
+          specialty: specialtyId,
+          specialty_label: getSpecialtyLabel(specialtyId, payload?.specialty_label),
+          diagnosis_or_position: asText(decision?.preliminary_impression) || "当前仍需先补齐关键信息后，才能形成本科明确判断。",
+          missing_key_info: needed.slice(0, 3),
+          next_actions: immediate.slice(0, 3),
+          key_point: toList(decision?.risk_flags || decision?.diagnostic_considerations)[0] || "",
+        };
+      });
+
+      const lead = specialties.length
+        ? "每个专科只保留三件事：本科判断、建议补全、当前下一步。"
+        : "当前还没有专科输出结果。";
+      const panel = createWorkflowPanel(lead);
+      appendWorkflowStats(panel, [{ label: "专科数量", value: specialties.length }]);
+
+      const stack = document.createElement("div");
+      stack.className = "specialty-stack";
+      specialties.forEach((brief, index) => {
+        const details = document.createElement("details");
+        details.className = "specialty-details";
+        details.open = index === 0;
+
+        const summary = document.createElement("summary");
+        summary.className = "specialty-summary";
+        const summaryMain = document.createElement("div");
+        summaryMain.className = "specialty-summary-main";
+        const summaryTitle = document.createElement("div");
+        summaryTitle.className = "specialty-summary-title";
+        summaryTitle.textContent = asText(brief?.specialty_label) || getSpecialtyLabel(brief?.specialty);
+        const summaryText = document.createElement("div");
+        summaryText.className = "specialty-summary-text";
+        summaryText.textContent = asText(brief?.diagnosis_or_position) || "已返回本科判断。";
+        const summaryToggle = document.createElement("div");
+        summaryToggle.className = "specialty-summary-toggle";
+        summaryToggle.textContent = details.open ? "收起" : "展开查看";
+        summaryMain.appendChild(summaryTitle);
+        summaryMain.appendChild(summaryText);
+        summary.appendChild(summaryMain);
+        summary.appendChild(summaryToggle);
+        details.appendChild(summary);
+
+        const content = document.createElement("div");
+        content.className = "specialty-content";
+        content.appendChild(createWorkflowCard("本科判断", {
+          body: asText(brief?.diagnosis_or_position) || "已返回本科判断。",
+          full: true,
+        }));
+        content.appendChild(createWorkflowCard("建议补全", {
+          items: ensureList(brief?.missing_key_info).length ? ensureList(brief?.missing_key_info) : ["暂无本科新增缺失项。"],
+          full: true,
+        }));
+        content.appendChild(createWorkflowCard("当前下一步", {
+          items: ensureList(brief?.next_actions).length ? ensureList(brief?.next_actions) : ["按本科建议继续推进。"],
+          full: true,
+        }));
+        if (asText(brief?.key_point)) {
+          content.appendChild(createWorkflowCard("本科重点", { body: asText(brief?.key_point), full: true }));
+        }
+        const footer = document.createElement("div");
+        footer.className = "specialty-footer";
+        const collapseBtn = document.createElement("button");
+        collapseBtn.type = "button";
+        collapseBtn.className = "btn workflow-collapse-btn";
+        collapseBtn.textContent = "收起本科摘要";
+        collapseBtn.addEventListener("click", () => {
+          details.open = false;
+        });
+        footer.appendChild(collapseBtn);
+        content.appendChild(footer);
+        details.appendChild(content);
+        details.addEventListener("toggle", () => {
+          summaryToggle.textContent = details.open ? "收起" : "展开查看";
+        });
+        stack.appendChild(details);
+      });
+
+      if (specialties.length) panel.appendChild(stack);
+      return panel;
+    }
+
+    function renderUncertaintyReviewSection(data) {
+      const unresolvedItems = ensureList(data?.unresolved_items);
+      const blockingItems = unresolvedItems.filter((item) => String(item?.priority || "").toLowerCase() === "high" || looksBlockingIssue(item?.question));
+      const supportingItems = unresolvedItems.filter((item) => !blockingItems.includes(item));
+      const lead = blockingItems.length
+        ? `当前最需要先处理的是 ${blockingItems.length} 个阻塞点，其余信息可并行补齐。`
+        : asText(data?.summary) || (unresolvedItems.length ? `当前共有 ${unresolvedItems.length} 个待补信息点。` : "当前没有未解决的不确定性。");
+      const panel = createWorkflowPanel(lead);
+
+      appendWorkflowStats(panel, [
+        { label: "待澄清点", value: unresolvedItems.length },
+        { label: "阻塞点", value: blockingItems.length },
+      ]);
+
+      if (blockingItems.length) {
+        const grid = document.createElement("div");
+        grid.className = "workflow-grid";
+        blockingItems.slice(0, 6).forEach((item, index) => {
+          const priority = normalizePriority(item?.priority);
+          grid.appendChild(createWorkflowCard(
+            `${index + 1}. ${getSpecialtyLabel(item?.source)}`,
+            {
+              subtitle: "当前阻塞点",
+              body: asText(item?.question) || "未返回问题描述。",
+              badges: [createWorkflowBadge(priority.label, priority.tone)],
+            },
+          ));
+        });
+        panel.appendChild(grid);
+      }
+
+      if (supportingItems.length) {
+        panel.appendChild(createWorkflowCard("并行补齐的信息", {
+          items: supportingItems.slice(0, 6).map((item) => `${getSpecialtyLabel(item?.source)}：${asText(item?.question)}`),
+          full: true,
+        }));
+      }
+      return panel;
+    }
+
+    function renderFollowUpSection(data) {
+      if (!data) {
+        const emptyPanel = createWorkflowPanel("当前没有触发二次追问。系统认为首轮信息已足够进入最终整合，或当前尚未生成追问回流。");
+        appendPanelCollapseAction(emptyPanel, "收起追问闭环");
+        return emptyPanel;
+      }
+
+      const tasks = ensureList(data?.dispatch_plan?.tasks);
+      const lead = asText(data?.summary)
+        || `围绕阻塞点，系统再次下派 ${tasks.length} 个追问任务。`;
+      const panel = createWorkflowPanel(lead);
+      appendWorkflowStats(panel, [{ label: "追问任务", value: tasks.length }]);
+
+      if (tasks.length) {
+        const taskGrid = document.createElement("div");
+        taskGrid.className = "workflow-grid";
+        tasks.forEach((task, index) => {
+          const priority = normalizePriority(task?.priority);
+          taskGrid.appendChild(createWorkflowCard(
+            `${index + 1}. 追问 ${getSpecialtyLabel(task?.specialty)}`,
+            {
+              subtitle: "当前仍需进一步确认",
+              body: asText(task?.question) || "未返回追问内容。",
+              badges: [createWorkflowBadge(priority.label, priority.tone)],
+            },
+          ));
+        });
+        panel.appendChild(taskGrid);
+      }
+      appendPanelCollapseAction(panel, "收起追问闭环");
+      return panel;
+    }
+
+    function renderWorkflowSectionContent(key, sectionData, workflowData) {
+      if (key === "initial_triage") return renderInitialTriageSection(sectionData);
+      if (key === "specialty_opinions") return renderSpecialtyOpinionsSection(sectionData, workflowData);
+      if (key === "uncertainty_review") return renderUncertaintyReviewSection(sectionData);
+      if (key === "mdt_follow_up") return renderFollowUpSection(sectionData);
+      const panel = createWorkflowPanel("暂无可展示的内容。");
+      if (asText(sectionData)) {
+        panel.appendChild(createWorkflowCard("补充信息", { body: asText(sectionData), full: true }));
+      }
+      return panel;
+    }
+
+    function buildFinalRecommendationCard(finalData, workflowData, compact = false) {
+      const report = document.createElement("article");
+      report.className = `report${compact ? " compact" : ""}`;
+
+      const currentAssessment = String(finalData?.current_assessment || "").trim();
+      const readinessStatus = String(finalData?.readiness_status || "").trim();
+      const finalPlan = toList(finalData?.final_plan);
+      const keyRisks = toList(finalData?.key_risks);
+      const nextSteps = toList(finalData?.next_steps);
+      const consensus = toList(finalData?.specialty_consensus);
+      const priorityActions = dedupeTexts(finalData?.priority_actions || nextSteps || finalPlan, 6);
+      const criticalRisks = dedupeTexts(finalData?.critical_risks || keyRisks, 4);
+      const postopWatchpoints = dedupeTexts(finalData?.postop_watchpoints, 5);
+      const specialtyBriefs = ensureList(finalData?.specialty_briefs);
+      const safetyBoundary = String(finalData?.safety_boundary || "").trim();
+      const hasFollowUp = Boolean(workflowData?.mdt_follow_up);
+
+      const header = document.createElement("header");
+      header.className = "report-header";
+      const kicker = document.createElement("div");
+      kicker.className = "report-kicker";
+      kicker.textContent = "Structured Summary";
+      const title = document.createElement("h2");
+      title.className = "report-title";
+      title.textContent = "MDT 总体结果";
+      const meta = document.createElement("div");
+      meta.className = "report-meta";
+      [
+        `建议方案 ${finalPlan.length} 项`,
+        `关键风险 ${keyRisks.length} 项`,
+        `下一步 ${nextSteps.length} 项`,
+        hasFollowUp ? "已纳入二次追问" : "未触发二次追问",
+      ].forEach((label) => {
+        const chip = document.createElement("span");
+        chip.className = "report-chip";
+        chip.textContent = label;
+        meta.appendChild(chip);
+      });
+      header.appendChild(kicker);
+      header.appendChild(title);
+      header.appendChild(meta);
+      report.appendChild(header);
+
+      const overview = document.createElement("div");
+      overview.className = "report-overview";
+      overview.appendChild(createOverviewCard("当前判断", currentAssessment || "未返回当前判断。", { full: true }));
+      overview.appendChild(createOverviewCard("当前状态", readinessStatus || "当前状态未明确。"));
+      overview.appendChild(createOverviewCard("当前要点", "", {
+        items: priorityActions.length ? priorityActions : ["暂无关键动作。"],
+      }));
+      overview.appendChild(createOverviewCard("当前最高风险", "", {
+        items: criticalRisks.length ? criticalRisks : ["暂无新增高风险提示。"],
+        full: true,
+      }));
+      report.appendChild(overview);
+
+      if (specialtyBriefs.length) {
+        const specialtySection = document.createElement("div");
+        specialtySection.className = "report-grid";
+        specialtySection.appendChild(createReportSection("分科摘要", {
+          items: specialtyBriefs.map((item) => `${item.specialty_label}：${item.diagnosis_or_position}`),
+          full: true,
+        }));
+        report.appendChild(specialtySection);
+      }
+
+      if (postopWatchpoints.length) {
+        const postopGrid = document.createElement("div");
+        postopGrid.className = "report-grid";
+        postopGrid.appendChild(createReportSection("术后与后续关注", { items: postopWatchpoints, full: true }));
+        report.appendChild(postopGrid);
+      }
+
+      if (consensus.length || safetyBoundary) {
+        const supplementary = document.createElement("details");
+        supplementary.className = "workflow-raw";
+        const supplementarySummary = document.createElement("summary");
+        supplementarySummary.textContent = "补充说明";
+        supplementary.appendChild(supplementarySummary);
+        const supplementaryBody = document.createElement("div");
+        supplementaryBody.className = "report-grid";
+        if (consensus.length) supplementaryBody.appendChild(createReportSection("专科共识", { items: consensus, full: true }));
+        if (safetyBoundary) supplementaryBody.appendChild(createReportSection("安全边界", { text: safetyBoundary, full: true }));
+        supplementary.appendChild(supplementaryBody);
+        report.appendChild(supplementary);
+      }
+      return report;
     }
 
     function appendProgressEvent(ev) {
       if (!ev) return;
-      const row = document.createElement("div");
-      row.className = `evt ${ev.type || "system"}`;
-      if (ev.type === "start") {
-        row.textContent = `[START] ${ev.label || ""}`;
-      } else if (ev.type === "done") {
-        row.textContent = `[DONE ] ${ev.label || ""} -> ${ev.duration_seconds || 0}s`;
-      } else if (ev.type === "error") {
-        row.textContent = `[ERROR] ${ev.message || ev.label || ""}`;
-      } else {
-        row.textContent = `[INFO ] ${ev.message || ev.label || ""}`;
-      }
-      progressList.appendChild(row);
-      progressList.scrollTop = progressList.scrollHeight;
+      latestProgressEvents.push(ev);
+      renderProgressEvents();
+      renderLiveProcessTrace();
     }
 
     function renderWorkflowSections(workflowData) {
+      latestWorkflowData = workflowData || null;
       sectionContainer.innerHTML = "";
       const sections = [
+        ["specialty_opinions", "分科摘要"],
+        ["uncertainty_review", "阻塞点与待补"],
+        ["mdt_follow_up", "追问闭环"],
         ["initial_triage", "首轮分诊"],
-        ["specialty_opinions", "专科输出"],
-        ["uncertainty_review", "不确定性汇总"],
-        ["mdt_follow_up", "二次追问"],
-        ["head_doctor_recommendation", "最终结论"],
       ];
       sections.forEach(([key, label]) => {
         const d = document.createElement("details");
-        if (key === "head_doctor_recommendation") d.open = true;
+        d.open = key === "specialty_opinions";
         const s = document.createElement("summary");
         s.textContent = label;
-        const p = document.createElement("pre");
-        p.textContent = fmt(workflowData?.[key] ?? null);
         d.appendChild(s);
-        d.appendChild(p);
+        d.appendChild(renderWorkflowSectionContent(key, workflowData?.[key], workflowData));
         sectionContainer.appendChild(d);
       });
     }
@@ -228,13 +1451,16 @@
         while (cursor < events.length) {
           const ev = events[cursor++];
           appendProgressEvent(ev);
-          if (ev.type === "start") addMessage("system", `[START] ${ev.label || ""}`);
-          if (ev.type === "done") addMessage("system", `[DONE ] ${ev.label || ""} -> ${ev.duration_seconds || 0}s`);
         }
 
         if (data.status === "done") {
           pendingEl.remove();
-          addMessage("assistant", data.reply || "已完成，但未返回回复文本。");
+          const finalData = data.workflow?.head_doctor_recommendation;
+          if (finalData && typeof finalData === "object") {
+            addRichMessage("assistant", buildFinalRecommendationCard(finalData, data.workflow || {}, false));
+          } else {
+            addMessage("assistant", data.reply || "已完成，但未返回回复文本。");
+          }
           renderWorkflowSections(data.workflow || {});
           return;
         }
@@ -258,8 +1484,16 @@
       statusEl.textContent = "Running";
       statusEl.style.background = "#fff7e6";
       statusEl.style.borderColor = "#f4d8a7";
-      progressList.innerHTML = "";
+      latestWorkflowData = null;
+      latestProgressEvents = [];
+      liveProcessTraceHost = null;
+      liveProcessTraceExpanded = new Set();
+      renderProgressEvents();
       sectionContainer.innerHTML = "";
+      const processTraceContainer = document.createElement("div");
+      addRichMessage("assistant", processTraceContainer);
+      liveProcessTraceHost = processTraceContainer;
+      renderLiveProcessTrace();
 
       const payload = {
         message,
@@ -300,7 +1534,6 @@
     input.addEventListener("keydown", (e) => {
       if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) submit();
     });
-  </script>
+</script>
 </body>
 </html>
-
