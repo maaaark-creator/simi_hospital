@@ -2,10 +2,13 @@ from __future__ import annotations
 
 import json
 import re
+import socket
+import ssl
+import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
-from urllib import request
+from urllib import error, request
 
 
 KB_PATH = Path(__file__).with_name("anesthesia_kb.json")
@@ -177,8 +180,18 @@ class GenAIChatClient:
             method="POST",
         )
 
-        with request.urlopen(req, timeout=60) as resp:
-            return json.loads(resp.read().decode("utf-8"))
+        last_error: Exception | None = None
+        for attempt in range(3):
+            try:
+                with request.urlopen(req, timeout=120) as resp:
+                    return json.loads(resp.read().decode("utf-8"))
+            except (error.URLError, ssl.SSLError, TimeoutError, socket.timeout) as exc:
+                last_error = exc
+                if attempt == 2:
+                    break
+                time.sleep(1.5 * (attempt + 1))
+
+        raise RuntimeError(f"Anesthesia API request failed after retries: {last_error}") from last_error
 
     def extract_text(self, response: dict[str, Any]) -> str:
         choices = response.get("choices", [])

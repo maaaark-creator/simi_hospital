@@ -1,5 +1,6 @@
 ﻿from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
 import importlib.util
 import json
 import re
@@ -47,6 +48,7 @@ MODEL_CONFIGS = {
 }
 
 HEAD_DOCTOR_REVIEW_MODELS = ("gpt_5_2", "qwen3", "deepseek_r1")
+HEAD_DOCTOR_REVIEW_MAX_WORKERS = 3
 
 
 SPECIALTY_SPECS = {
@@ -311,19 +313,38 @@ class SpecialtyAgentAdapter:
                 f"你现在扮演{self.label}专科医生。\n"
                 "请基于患者信息、你之前的专科结论，以及当前追问问题，补充更细化的意见。\n"
                 "只返回 JSON，字段固定为：specialty, question, answer, action_items, remaining_uncertainties, confidence。\n"
+                "- answer 必须是一个简短字符串（不超过120字），不要返回数组。\n"
                 "- action_items 和 remaining_uncertainties 必须是字符串数组。\n"
+                "- action_items 最多 3 条，remaining_uncertainties 最多 3 条。\n"
                 "- 若仍不能确认，请明确写入 remaining_uncertainties。\n\n"
                 f"患者信息：\n{json.dumps(patient_input, ensure_ascii=False, indent=2) if isinstance(patient_input, dict) else patient_input}\n\n"
                 f"既有专科结论：\n{json.dumps(specialty_evaluation, ensure_ascii=False, indent=2)}\n\n"
                 f"追问问题：\n{question}"
             )
-            response = self.api_client.chat_json(MODEL_CONFIGS["gpt_5_2"], prompt)
-            payload = self.api_client.extract_json(response)
-            payload.setdefault("specialty", self.specialty_id)
-            payload.setdefault("question", question)
-            payload.setdefault("action_items", [])
-            payload.setdefault("remaining_uncertainties", [])
-            return payload
+            try:
+                response = self.api_client.chat_json(MODEL_CONFIGS["gpt_5_2"], prompt)
+                payload = self.api_client.extract_json(response)
+
+                answer_value = payload.get("answer")
+                if isinstance(answer_value, list):
+                    answer_text = "；".join(str(item).strip() for item in answer_value if str(item).strip())
+                    payload["answer"] = answer_text[:240]
+                elif isinstance(answer_value, str):
+                    payload["answer"] = answer_value.strip()[:240]
+                elif answer_value is None:
+                    payload["answer"] = ""
+                else:
+                    payload["answer"] = str(answer_value).strip()[:240]
+
+                payload.setdefault("specialty", self.specialty_id)
+                payload.setdefault("question", question)
+                payload["action_items"] = self._string_list(payload.get("action_items"))[:3]
+                payload["remaining_uncertainties"] = self._string_list(payload.get("remaining_uncertainties"))[:3]
+                payload["confidence"] = str(payload.get("confidence") or "medium")
+                return payload
+            except Exception:
+                # Fall back to deterministic local clarification to avoid aborting the whole workflow.
+                pass
 
         decision_result = specialty_evaluation.get("decision_result", {})
         retrieval_result = specialty_evaluation.get("retrieval_result", {})
@@ -553,23 +574,76 @@ class HeadDoctorAgent:
         uncertainty_review: dict[str, Any],
         mdt_follow_up: dict[str, Any] | None,
     ) -> dict[str, Any]:
-        panel_opinions = [
-            self._review_with_model(
-                model_key=model_key,
+        panel_opinions: list[dict[str, Any]] = []
+        successful_reviews = 0
+        max_workers = min(HEAD_DOCTOR_REVIEW_MAX_WORKERS, len(HEAD_DOCTOR_REVIEW_MODELS))
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            future_by_model = {
+                model_key: executor.submit(
+                    self._review_with_model,
+                    model_key=model_key,
+                    patient_input=patient_input,
+                    specialty_opinions=specialty_opinions,
+                    uncertainty_review=uncertainty_review,
+                    mdt_follow_up=mdt_follow_up,
+                )
+                for model_key in HEAD_DOCTOR_REVIEW_MODELS
+            }
+            for model_key in HEAD_DOCTOR_REVIEW_MODELS:
+                future = future_by_model[model_key]
+                try:
+                    panel_opinions.append(future.result())
+                    successful_reviews += 1
+                except Exception as exc:
+                    panel_opinions.append(
+                        {
+                            "review_model": MODEL_CONFIGS[model_key].name,
+                            "review_model_key": model_key,
+                            "case_summary": f"{model_key} 复核失败。",
+                            "specialty_consensus": [],
+                            "key_risks": [],
+                            "final_plan": [],
+                            "next_steps": [],
+                            "unresolved_issues": [f"{model_key} 复核失败：{exc}"],
+                            "specific_surgical_plan": [],
+                            "medical_record_plan": "",
+                            "safety_boundary": "",
+                            "thinking_log": f"{model_key} 复核超时或失败，已降级继续。",
+                            "error": str(exc),
+                        }
+                    )
+
+        if successful_reviews == 0:
+            local_review = self._integrate_locally(
                 patient_input=patient_input,
                 specialty_opinions=specialty_opinions,
                 uncertainty_review=uncertainty_review,
                 mdt_follow_up=mdt_follow_up,
             )
-            for model_key in HEAD_DOCTOR_REVIEW_MODELS
-        ]
-        merged_review = self._merge_panel_opinions(
-            patient_input=patient_input,
-            specialty_opinions=specialty_opinions,
-            uncertainty_review=uncertainty_review,
-            mdt_follow_up=mdt_follow_up,
-            panel_opinions=panel_opinions,
-        )
+            local_review["case_summary"] = str(local_review.get("case_summary") or "") + " 多模型复核均失败，已回退本地整合。"
+            local_review["model_panel_opinions"] = panel_opinions
+            return self._format_final_recommendation(
+                specialty_opinions=specialty_opinions,
+                uncertainty_review=uncertainty_review,
+                mdt_follow_up=mdt_follow_up,
+                final_review=local_review,
+            )
+
+        try:
+            merged_review = self._merge_panel_opinions(
+                patient_input=patient_input,
+                specialty_opinions=specialty_opinions,
+                uncertainty_review=uncertainty_review,
+                mdt_follow_up=mdt_follow_up,
+                panel_opinions=panel_opinions,
+            )
+        except Exception:
+            merged_review = self._synthesize_panel_opinions(
+                specialty_opinions=specialty_opinions,
+                uncertainty_review=uncertainty_review,
+                mdt_follow_up=mdt_follow_up,
+                panel_opinions=panel_opinions,
+            )
         merged_review["model_panel_opinions"] = panel_opinions
         return self._format_final_recommendation(
             specialty_opinions=specialty_opinions,
@@ -589,11 +663,19 @@ class HeadDoctorAgent:
         prompt = (
             "你是医院的 head_doctor，需要整合多个专科 agent 的初始结论，以及 mdt_call 的二次分诊补充意见，"
             "形成一个统一的最终诊疗方案结论，并给出完整的思考日志。请只返回 JSON，字段固定为："
-            "case_summary, specialty_consensus, key_risks, final_plan, next_steps, unresolved_issues, medical_record_plan, safety_boundary, thinking_log。\n"
-            "- specialty_consensus, key_risks, final_plan, next_steps, unresolved_issues 必须是字符串数组。\n"
+            "case_summary, specialty_consensus, key_risks, final_plan, next_steps, unresolved_issues, "
+            "medical_record_plan, safety_boundary, thinking_log, "
+            "current_status_level, surgery_channel_open, core_constraints, module_assessments, specific_surgical_plan。\n"
+            "- specialty_consensus, key_risks, final_plan, next_steps, unresolved_issues, core_constraints 必须是字符串数组。\n"
+            "- specific_surgical_plan 必须是字符串数组，按术前/术中/术后给出可执行步骤，每条一句话。\n"
             "- final_plan 中直接给出最终方案要点，语言简明扼要，避免冗长介绍。\n"
             "- medical_record_plan 必须是一段可直接写入病历/会诊记录的中文。\n"
             "- thinking_log 必须是一段中文，清晰说明你是如何权衡各专科结论、判断冲突、优先风险，并说明是否通过 mdt_call 追问补充不确定信息。\n"
+            "- current_status_level 只能是 READY / OPTIMIZE / CONTRAINDICATED 之一，不允许模糊表述。\n"
+            "- surgery_channel_open 只能是 yes 或 no。\n"
+            "- core_constraints 最多 3 条，只保留真正影响当前手术决策的限制因素。\n"
+            "- module_assessments 必须是数组，每项字段固定为 module, status, risk_level, evidence。"
+            " risk_level 只能是 low / medium / high；evidence 必须是字符串数组并引用输入数据。\n"
             "- 若仍有信息不足，请明确写入 unresolved_issues，不要编造。但是，即使信息不足，请根据目前的状况先得出一个最合适的结论和决策。\n\n"
             f"患者输入：\n{json.dumps(patient_input, ensure_ascii=False, indent=2) if isinstance(patient_input, dict) else patient_input}\n\n"
             f"专科结论：\n{json.dumps(specialty_opinions, ensure_ascii=False, indent=2)}\n\n"
@@ -625,6 +707,8 @@ class HeadDoctorAgent:
             uncertainty_review=uncertainty_review,
             mdt_follow_up=mdt_follow_up,
         )
+        self._normalize_current_status_fields(final_review, specialty_opinions)
+        self._normalize_specific_surgical_plan(final_review)
         return final_review
 
     def _merge_panel_opinions(
@@ -638,9 +722,16 @@ class HeadDoctorAgent:
         prompt = (
             "你是医院的 head_doctor，现在手上有多个不同模型对专科结论的审阅结果，"
             "请将这些模型意见统一合成一个简洁的最终诊疗方案，并给出思考日志。请只返回 JSON，字段固定为："
-            "case_summary, specialty_consensus, key_risks, final_plan, next_steps, unresolved_issues, medical_record_plan, safety_boundary, thinking_log。\n"
+            "case_summary, specialty_consensus, key_risks, final_plan, next_steps, unresolved_issues, "
+            "medical_record_plan, safety_boundary, thinking_log, "
+            "current_status_level, surgery_channel_open, core_constraints, module_assessments, specific_surgical_plan。\n"
             "- final_plan 必须直接给出方案要点，语言简明扼要。\n"
+            "- specific_surgical_plan 必须按术前/术中/术后给出可执行步骤，避免泛化总结。\n"
             "- thinking_log 必须说明你如何比较各模型意见、识别冲突、优先风险，以及如何基于 mdt_call 追问结果形成最终结论。\n"
+            "- current_status_level 只能是 READY / OPTIMIZE / CONTRAINDICATED 之一。\n"
+            "- surgery_channel_open 只能是 yes 或 no。\n"
+            "- core_constraints 最多 3 条，必须是真正影响当前手术通道判断的限制因素。\n"
+            "- module_assessments 必须保留各模块分层结论，字段固定为 module, status, risk_level, evidence。\n"
             "- 若仍有信息不足，请明确写入 unresolved_issues，不要编造。但是，即使信息不足，请根据目前的状况先得出一个最合适的结论和决策，合成一个简洁的最终治疗方案。\n\n"
             f"患者输入：\n{json.dumps(patient_input, ensure_ascii=False, indent=2) if isinstance(patient_input, dict) else patient_input}\n\n"
             f"专科结论：\n{json.dumps(specialty_opinions, ensure_ascii=False, indent=2)}\n\n"
@@ -652,6 +743,125 @@ class HeadDoctorAgent:
         payload = self.api_client.extract_json(response)
         payload["merge_model"] = MODEL_CONFIGS["gpt_5_2"].name
         return payload
+
+    def _normalize_current_status_fields(
+        self,
+        final_review: dict[str, Any],
+        specialty_opinions: dict[str, Any],
+    ) -> None:
+        allowed_levels = {"READY", "OPTIMIZE", "CONTRAINDICATED"}
+        level = str(final_review.get("current_status_level") or "").strip().upper()
+        unresolved = self._string_list(final_review.get("unresolved_issues"))
+        key_risks = self._string_list(final_review.get("key_risks"))
+
+        if level not in allowed_levels:
+            level = "OPTIMIZE" if unresolved else "READY"
+            if any("禁忌" in item or "contraind" in item.lower() for item in key_risks):
+                level = "CONTRAINDICATED"
+        final_review["current_status_level"] = level
+
+        channel_raw = str(final_review.get("surgery_channel_open") or "").strip().lower()
+        if channel_raw in ("yes", "true", "1"):
+            channel = "yes"
+        elif channel_raw in ("no", "false", "0"):
+            channel = "no"
+        else:
+            channel = "yes" if level == "READY" else "no"
+        final_review["surgery_channel_open"] = channel
+
+        core_constraints = self._string_list(final_review.get("core_constraints"))
+        if not core_constraints:
+            core_constraints = unresolved[:3] or key_risks[:3]
+        final_review["core_constraints"] = core_constraints[:3]
+
+        module_assessments = self._normalize_module_assessments(
+            final_review.get("module_assessments"),
+        )
+        if not module_assessments:
+            module_assessments = self._build_default_module_assessments(specialty_opinions)
+        final_review["module_assessments"] = module_assessments[:8]
+
+    def _normalize_specific_surgical_plan(self, final_review: dict[str, Any]) -> None:
+        plan_steps = self._string_list(final_review.get("specific_surgical_plan"))
+        final_plan = self._string_list(final_review.get("final_plan"))
+        next_steps = self._string_list(final_review.get("next_steps"))
+
+        if not plan_steps:
+            merged = []
+            for item in final_plan + next_steps:
+                if item and item not in merged:
+                    merged.append(item)
+            plan_steps = [f"步骤{i + 1}：{text}" for i, text in enumerate(merged[:8])]
+        else:
+            plan_steps = [str(item).strip() for item in plan_steps if str(item).strip()][:8]
+        final_review["specific_surgical_plan"] = plan_steps
+
+    def _normalize_module_assessments(self, raw: Any) -> list[dict[str, Any]]:
+        if not isinstance(raw, list):
+            return []
+        result: list[dict[str, Any]] = []
+        for item in raw:
+            if not isinstance(item, dict):
+                continue
+            module = str(item.get("module") or item.get("module_name") or "").strip()
+            if not module:
+                continue
+            status = str(item.get("status") or "").strip() or "undetermined"
+            risk_level = str(item.get("risk_level") or item.get("risk") or "").strip().lower()
+            if risk_level not in ("low", "medium", "high"):
+                risk_level = "medium"
+            evidence = self._string_list(
+                item.get("evidence")
+                or item.get("basis")
+                or item.get("reason")
+            )[:3]
+            result.append(
+                {
+                    "module": module,
+                    "status": status,
+                    "risk_level": risk_level,
+                    "evidence": evidence,
+                }
+            )
+        return result
+
+    def _build_default_module_assessments(self, specialty_opinions: dict[str, Any]) -> list[dict[str, Any]]:
+        module_rows: list[dict[str, Any]] = []
+        for specialty_id, payload in specialty_opinions.items():
+            decision_result = payload.get("decision_result", {})
+            retrieval_result = payload.get("retrieval_result", {})
+            label = str(payload.get("specialty_label") or specialty_id)
+
+            risk_flags = self._string_list(decision_result.get("risk_flags"))
+            missing_info = self._string_list(decision_result.get("need_more_info")) + self._string_list(
+                retrieval_result.get("missing_information")
+            )
+
+            if missing_info:
+                status = "needs_more_information"
+                risk_level = "high"
+            elif risk_flags:
+                status = "risk_noted"
+                risk_level = "medium"
+            else:
+                status = "acceptable_for_current_stage"
+                risk_level = "low"
+
+            evidence = self._string_list(
+                decision_result.get("preliminary_impression")
+                or decision_result.get("primary_condition_id")
+                or decision_result.get("primary_plan_id")
+            )
+            evidence = (evidence + risk_flags + missing_info)[:3]
+            module_rows.append(
+                {
+                    "module": label,
+                    "status": status,
+                    "risk_level": risk_level,
+                    "evidence": evidence,
+                }
+            )
+        return module_rows
 
     def _build_uncertainty_flow(
         self,
@@ -693,6 +903,7 @@ class HeadDoctorAgent:
         final_plan: list[str] = []
         next_steps: list[str] = []
         unresolved_issues: list[str] = []
+        specific_surgical_plan: list[str] = []
         medical_record_fragments: list[str] = []
         reviewed_by: list[str] = []
 
@@ -703,6 +914,7 @@ class HeadDoctorAgent:
             final_plan.extend(self._string_list(opinion.get("final_plan")))
             next_steps.extend(self._string_list(opinion.get("next_steps")))
             unresolved_issues.extend(self._string_list(opinion.get("unresolved_issues")))
+            specific_surgical_plan.extend(self._string_list(opinion.get("specific_surgical_plan")))
             fragment = str(opinion.get("medical_record_plan") or "").strip()
             if fragment:
                 medical_record_fragments.append(f"[{opinion.get('review_model', 'unknown')}] {fragment}")
@@ -712,6 +924,9 @@ class HeadDoctorAgent:
         next_steps = list(dict.fromkeys(item for item in next_steps if item))
         unresolved_issues = list(dict.fromkeys(item for item in unresolved_issues if item))
         final_plan = list(dict.fromkeys(item for item in (final_plan + next_steps) if item))
+        specific_surgical_plan = list(dict.fromkeys(item for item in specific_surgical_plan if item))
+        if not specific_surgical_plan:
+            specific_surgical_plan = final_plan[:8]
 
         case_summary = (
             f"已完成 {len(panel_opinions)} 个不同模型的 head_doctor 会诊审阅，并汇总 {len(specialty_opinions)} 个专科 agent 结论。"
@@ -733,6 +948,7 @@ class HeadDoctorAgent:
             "final_plan": final_plan,
             "next_steps": next_steps,
             "unresolved_issues": unresolved_issues,
+            "specific_surgical_plan": specific_surgical_plan,
             "medical_record_plan": "\n".join(medical_record_fragments),
             "safety_boundary": "本结果仅作为多模型、多专科会诊辅助建议，不能替代临床医生面诊、查体与正式医嘱。",
         }
@@ -802,6 +1018,10 @@ class HeadDoctorAgent:
             "综合多专科智能体意见，当前建议先按各专科首选路径进行风险分层和处置准备，"
             "对仍不确定的关键字段继续通过 MDT 二次分诊补充后，再由 head_doctor 形成最终执行方案。"
         )
+        current_status_level = "OPTIMIZE" if unresolved else "READY"
+        if any("禁忌" in item or "contraind" in item.lower() for item in key_risks):
+            current_status_level = "CONTRAINDICATED"
+        specific_surgical_plan = [f"步骤{i + 1}：{text}" for i, text in enumerate((final_plan + next_steps)[:8])]
         return {
             "case_summary": case_summary,
             "specialty_consensus": specialty_consensus,
@@ -809,8 +1029,13 @@ class HeadDoctorAgent:
             "final_plan": final_plan,
             "next_steps": next_steps,
             "unresolved_issues": unresolved,
+            "specific_surgical_plan": specific_surgical_plan,
             "medical_record_plan": medical_record_plan,
             "safety_boundary": "本结果仅作为多智能体会诊辅助建议，不能替代临床医生面诊、查体与正式医嘱。",
+            "current_status_level": current_status_level,
+            "surgery_channel_open": "yes" if current_status_level == "READY" else "no",
+            "core_constraints": (unresolved[:3] or key_risks[:3]),
+            "module_assessments": self._build_default_module_assessments(specialty_opinions),
         }
 
     def _extract_primary_marker(self, decision_result: dict[str, Any]) -> str | None:

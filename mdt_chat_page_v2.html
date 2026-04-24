@@ -497,8 +497,12 @@
             <label class="chip"><input type="checkbox" id="api_mdt" checked /> API分诊</label>
             <label class="chip"><input type="checkbox" id="api_specialists" checked /> API专科</label>
             <label class="chip"><input type="checkbox" id="api_final" checked /> API最终整合</label>
+            <label class="chip"><input type="checkbox" id="plan_followup" checked /> 补充信息走终局方案</label>
           </div>
-          <button id="send" class="btn primary">发送</button>
+          <div class="row">
+            <button id="newCase" class="btn">新患者</button>
+            <button id="send" class="btn primary">发送</button>
+          </div>
         </div>
       </div>
     </section>
@@ -523,9 +527,11 @@
     const messages = document.getElementById("messages");
     const input = document.getElementById("input");
     const send = document.getElementById("send");
+    const newCaseBtn = document.getElementById("newCase");
     const statusEl = document.getElementById("status");
     const progressList = document.getElementById("progressList");
     const sectionContainer = document.getElementById("sectionContainer");
+    let activeSessionId = null;
     let latestWorkflowData = null;
     let latestProgressEvents = [];
     let liveProcessTraceHost = null;
@@ -549,6 +555,26 @@
       el.className = `msg ${role} rich`;
       el.appendChild(contentNode);
       return appendMessageElement(el);
+    }
+
+    function resetConversationView() {
+      messages.innerHTML = "";
+      addMessage("system", "新患者会话已创建。请输入该患者的病例信息。");
+      sectionContainer.innerHTML = "";
+      progressList.innerHTML = "";
+      const chip = document.createElement("div");
+      chip.className = "chip";
+      chip.textContent = "等待一次会话结果";
+      progressList.appendChild(chip);
+      latestWorkflowData = null;
+      latestProgressEvents = [];
+      liveProcessTraceHost = null;
+      liveProcessTraceExpanded = new Set();
+      statusEl.textContent = "Ready";
+      statusEl.style.background = "#f8fafc";
+      statusEl.style.borderColor = "#dae1e8";
+      input.value = "";
+      input.focus();
     }
 
     function extractTextFragments(value) {
@@ -851,6 +877,8 @@
       if (lower === "workflow/start") return type === "done" ? "MDT 会诊已启动" : "正在启动 MDT 会诊";
       if (lower === "workflow/done") return "已完成 MDT 总结";
       if (lower === "workflow/error") return ev?.message || "MDT 工作流执行失败";
+      if (lower === "plan_agent/start") return "正在根据补充信息更新终局手术方案";
+      if (lower === "plan_agent/done") return "终局手术方案已更新";
       if (lower === "mdt_call/initial_triage_planning") return type === "done" ? "已完成首轮分诊" : "正在完成首轮分诊";
       if (lower === "mdt_call/follow_up_planning") return type === "done" ? "已生成二次追问分配" : "正在整理二次追问";
       if (lower === "head_doctor/model_panel_review") return type === "done" ? "已完成最终整合" : "正在整合会诊结论";
@@ -1328,9 +1356,15 @@
       const report = document.createElement("article");
       report.className = `report${compact ? " compact" : ""}`;
 
+      const displayMode = String(finalData?.display_mode || "").trim().toLowerCase();
+      const summaryOnly = displayMode === "summary_only";
       const currentAssessment = String(finalData?.current_assessment || "").trim();
       const readinessStatus = String(finalData?.readiness_status || "").trim();
       const finalPlan = toList(finalData?.final_plan);
+      const specificSurgicalPlan = dedupeTexts(
+        summaryOnly ? [] : (finalData?.specific_surgical_plan || finalPlan || finalData?.next_steps),
+        8,
+      );
       const keyRisks = toList(finalData?.key_risks);
       const nextSteps = toList(finalData?.next_steps);
       const consensus = toList(finalData?.specialty_consensus);
@@ -1351,12 +1385,21 @@
       title.textContent = "MDT 总体结果";
       const meta = document.createElement("div");
       meta.className = "report-meta";
-      [
-        `建议方案 ${finalPlan.length} 项`,
-        `关键风险 ${keyRisks.length} 项`,
-        `下一步 ${nextSteps.length} 项`,
-        hasFollowUp ? "已纳入二次追问" : "未触发二次追问",
-      ].forEach((label) => {
+      const chips = summaryOnly
+        ? [
+            `建议方案 ${priorityActions.length} 项`,
+            `关键风险 ${criticalRisks.length} 项`,
+            `下一步 ${nextSteps.length} 项`,
+            hasFollowUp ? "已纳入二次追问" : "未触发二次追问",
+          ]
+        : [
+            `具体方案 ${specificSurgicalPlan.length} 步`,
+            `建议方案 ${finalPlan.length} 项`,
+            `关键风险 ${keyRisks.length} 项`,
+            `下一步 ${nextSteps.length} 项`,
+            hasFollowUp ? "已纳入二次追问" : "未触发二次追问",
+          ];
+      chips.forEach((label) => {
         const chip = document.createElement("span");
         chip.className = "report-chip";
         chip.textContent = label;
@@ -1380,7 +1423,17 @@
       }));
       report.appendChild(overview);
 
-      if (specialtyBriefs.length) {
+      if (!summaryOnly && specificSurgicalPlan.length) {
+        const concretePlanGrid = document.createElement("div");
+        concretePlanGrid.className = "report-grid";
+        concretePlanGrid.appendChild(createReportSection("具体手术方案（可执行）", {
+          items: specificSurgicalPlan,
+          full: true,
+        }));
+        report.appendChild(concretePlanGrid);
+      }
+
+      if (!summaryOnly && specialtyBriefs.length) {
         const specialtySection = document.createElement("div");
         specialtySection.className = "report-grid";
         specialtySection.appendChild(createReportSection("分科摘要", {
@@ -1390,14 +1443,14 @@
         report.appendChild(specialtySection);
       }
 
-      if (postopWatchpoints.length) {
+      if (!summaryOnly && postopWatchpoints.length) {
         const postopGrid = document.createElement("div");
         postopGrid.className = "report-grid";
-        postopGrid.appendChild(createReportSection("术后与后续关注", { items: postopWatchpoints, full: true }));
+        postopGrid.appendChild(createReportSection("关键关注项（按重要性）", { items: postopWatchpoints, full: true }));
         report.appendChild(postopGrid);
       }
 
-      if (consensus.length || safetyBoundary) {
+      if (!summaryOnly && (consensus.length || safetyBoundary)) {
         const supplementary = document.createElement("details");
         supplementary.className = "workflow-raw";
         const supplementarySummary = document.createElement("summary");
@@ -1446,6 +1499,7 @@
         const resp = await fetch(`/api/job?job_id=${encodeURIComponent(jobId)}`);
         const data = await resp.json();
         if (!resp.ok) throw new Error(data.error || `HTTP ${resp.status}`);
+        if (data?.session_id) activeSessionId = String(data.session_id);
 
         const events = Array.isArray(data.events) ? data.events : [];
         while (cursor < events.length) {
@@ -1497,9 +1551,12 @@
 
       const payload = {
         message,
+        session_id: activeSessionId,
         use_api_for_mdt: document.getElementById("api_mdt").checked,
         use_api_for_specialists: document.getElementById("api_specialists").checked,
         use_api_for_final: document.getElementById("api_final").checked,
+        use_plan_agent_followup: document.getElementById("plan_followup").checked,
+        use_api_for_plan_agent: document.getElementById("api_final").checked,
         use_api_for_structuring: true,
         use_api_for_entity_linking: true,
         use_mdt_for_uncertainty: true,
@@ -1513,10 +1570,16 @@
           body: JSON.stringify(payload),
         });
         const data = await resp.json();
+        if (data?.session_id) activeSessionId = String(data.session_id);
         if (!resp.ok) {
           pending.remove();
           addMessage("assistant", `请求失败：${data.error || resp.status}`);
           return;
+        }
+        if (data?.run_mode === "plan_agent_followup") {
+          addMessage("system", "本轮已切换为终局手术方案更新模式（使用历史MDT记忆）。");
+        } else {
+          addMessage("system", "本轮使用完整MDT流程。");
         }
         await pollJob(data.job_id, pending);
       } catch (err) {
@@ -1531,6 +1594,10 @@
     }
 
     send.addEventListener("click", submit);
+    newCaseBtn.addEventListener("click", () => {
+      activeSessionId = null;
+      resetConversationView();
+    });
     input.addEventListener("keydown", (e) => {
       if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) submit();
     });

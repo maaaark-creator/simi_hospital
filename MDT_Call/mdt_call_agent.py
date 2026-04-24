@@ -1,5 +1,6 @@
 ﻿from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
 import json
 import re
 import socket
@@ -31,6 +32,8 @@ MODEL_CONFIGS = {
         api_key="bb336cff66f54e7a9d6f48b3dba97657",
     ),
 }
+
+MAX_PARALLEL_WORKERS = 4
 
 
 class SharedGenAIChatClient:
@@ -151,20 +154,47 @@ class MDTCallAgent:
             else self.retriever.build_dispatch_plan(request_context)
         )
         clarifications = []
+        valid_tasks: list[tuple[str, str]] = []
         for task in dispatch_plan.get("tasks", []):
             specialty_id = str(task.get("specialty") or "").strip()
             question = str(task.get("question") or "").strip()
             if not specialty_id or not question:
                 continue
-            clarifications.append(
-                specialist_callback(
-                    specialty_id,
-                    question,
-                    use_api_for_clarification,
-                    patient_input,
-                    specialty_opinions,
-                )
-            )
+            valid_tasks.append((specialty_id, question))
+
+        if valid_tasks:
+            max_workers = min(MAX_PARALLEL_WORKERS, len(valid_tasks))
+            with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                future_items = [
+                    (
+                        specialty_id,
+                        question,
+                        executor.submit(
+                            specialist_callback,
+                            specialty_id,
+                            question,
+                            use_api_for_clarification,
+                            patient_input,
+                            specialty_opinions,
+                        ),
+                    )
+                    for specialty_id, question in valid_tasks
+                ]
+                for specialty_id, question, future in future_items:
+                    try:
+                        clarifications.append(future.result())
+                    except Exception as exc:
+                        clarifications.append(
+                            {
+                                "specialty": specialty_id,
+                                "question": question,
+                                "answer": f"{specialty_id} 追问暂未返回（超时或接口失败）。",
+                                "action_items": [],
+                                "remaining_uncertainties": [question],
+                                "confidence": "low",
+                                "error": str(exc),
+                            }
+                        )
 
         return {
             "request_context": request_context,
@@ -186,17 +216,50 @@ class MDTCallAgent:
             else self.retriever.build_initial_triage_plan(request_context)
         )
         specialty_opinions: dict[str, Any] = {}
+        specialty_ids: list[str] = []
+        failed_specialties: list[str] = []
         for task in dispatch_plan.get("tasks", []):
             specialty_id = str(task.get("specialty") or "").strip()
-            if not specialty_id or specialty_id in specialty_opinions:
+            if not specialty_id or specialty_id in specialty_ids:
                 continue
-            specialty_opinions[specialty_id] = specialist_callback(specialty_id, patient_input)
+            specialty_ids.append(specialty_id)
 
+        if specialty_ids:
+            max_workers = min(MAX_PARALLEL_WORKERS, len(specialty_ids))
+            with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                future_by_specialty = {
+                    specialty_id: executor.submit(specialist_callback, specialty_id, patient_input)
+                    for specialty_id in specialty_ids
+                }
+                for specialty_id in specialty_ids:
+                    try:
+                        specialty_opinions[specialty_id] = future_by_specialty[specialty_id].result()
+                    except Exception as exc:
+                        failed_specialties.append(specialty_id)
+                        specialty_opinions[specialty_id] = {
+                            "specialty": specialty_id,
+                            "specialty_label": specialty_id,
+                            "structured_patient": {},
+                            "normalized_patient": {},
+                            "entity_linking": {},
+                            "retrieval_result": {
+                                "missing_information": [f"{specialty_id} 评估超时或接口失败：{exc}"],
+                            },
+                            "decision_result": {
+                                "need_more_info": [f"{specialty_id} 当前未返回可用结论，建议重试。"],
+                                "risk_flags": [f"{specialty_id} 评估结果暂不可用。"],
+                            },
+                            "error": str(exc),
+                        }
+
+        summary = f"mdt_call 首轮分诊触发了 {len(specialty_opinions)} 个专科 agent。"
+        if failed_specialties:
+            summary += f" 其中 {len(failed_specialties)} 个专科超时/失败，已保留占位结果：{', '.join(failed_specialties)}。"
         return {
             "request_context": request_context,
             "dispatch_plan": dispatch_plan,
             "specialty_opinions": specialty_opinions,
-            "summary": f"mdt_call 首轮分诊触发了 {len(specialty_opinions)} 个专科 agent。",
+            "summary": summary,
         }
 
     def _plan_with_api(self, request_context: dict[str, Any]) -> dict[str, Any]:
