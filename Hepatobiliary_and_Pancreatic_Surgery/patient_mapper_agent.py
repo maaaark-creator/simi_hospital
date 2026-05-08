@@ -18,7 +18,7 @@ if str(_LLM_HELPER_ROOT) not in sys.path:
 from llm_gateway import DEFAULT_LLM_GATEWAY_URL, build_auth_headers, get_llm_model_id
 
 
-KB_PATH = Path(__file__).with_name("cardiovascular_kb.json")
+KB_PATH = Path(__file__).with_name("hepatobiliary_kb.json")
 GENAI_API_URL = DEFAULT_LLM_GATEWAY_URL
 
 
@@ -61,9 +61,9 @@ PATIENT_FIELD_ALIASES = {
     "weight_kg": ["weight", "weight_kg", "体重", "公斤"],
     "height_cm": ["height", "height_cm", "身高", "身高cm"],
     "chief_complaint": ["chief_complaint", "cc", "主诉"],
-    "symptoms": ["symptoms", "现病史症状", "症状", "不适"],
+    "symptoms": ["symptoms", "症状", "现病史症状"],
     "diagnosis_hint": ["diagnosis_hint", "诊断提示", "拟诊", "临床诊断", "初步诊断"],
-    "procedure_name": ["procedure_name", "procedure", "手术", "术式", "拟行手术", "操作", "介入计划"],
+    "procedure_name": ["procedure_name", "procedure", "手术", "术式", "拟行手术", "操作"],
     "procedure_site": ["procedure_site", "手术部位", "病变部位"],
     "comorbidities": ["comorbidities", "past_history", "既往史", "合并症", "基础疾病"],
     "medications": ["medications", "medication_history", "home_medications", "用药史", "长期用药", "常用药"],
@@ -71,15 +71,17 @@ PATIENT_FIELD_ALIASES = {
     "urgency": ["urgency", "emergency", "急诊", "紧急程度"],
     "vitals": ["vitals", "生命体征"],
     "labs": ["labs", "检验", "实验室", "化验"],
-    "ecg_summary": ["ecg_summary", "ecg", "心电图", "心电图摘要"],
-    "echo_summary": ["echo_summary", "echo", "超声心动图", "心超"],
-    "imaging_summary": ["imaging_summary", "imaging", "CTA", "影像", "影像摘要"],
+    "imaging_summary": ["imaging_summary", "imaging", "影像", "影像摘要", "CT", "MRI", "MRCP", "超声"],
+    "pathology_summary": ["pathology_summary", "pathology", "病理", "病理摘要"],
+    "drainage_status": ["drainage_status", "引流情况", "胆道引流", "腹腔引流"],
+    "infection_status": ["infection_status", "感染情况", "发热感染", "脓毒症提示"],
     "bleeding_status": ["bleeding_status", "出血情况", "活动性出血"],
-    "postop_context": ["postop_context", "术后背景", "心外术后", "术后情况"],
+    "liver_function": ["liver_function", "肝功能摘要", "肝功能"],
+    "postop_context": ["postop_context", "术后背景", "术后情况", "围手术期情况"],
 }
 
 
-class CardiologyKnowledgeBase:
+class HepatobiliaryKnowledgeBase:
     def __init__(self, path: Path = KB_PATH) -> None:
         self.path = path
         self.data = self._load()
@@ -141,12 +143,7 @@ class GenAIChatClient:
             "messages": [
                 {
                     "role": "user",
-                    "content": [
-                        {
-                            "type": "text",
-                            "text": prompt,
-                        }
-                    ],
+                    "content": [{"type": "text", "text": prompt}],
                 }
             ],
             "temperature": temperature,
@@ -179,7 +176,7 @@ class GenAIChatClient:
                 time.sleep(1.5 * (attempt + 1))
 
         raise RuntimeError(
-            f"Cardiology API request failed after retries: {last_error}"
+            f"Hepatobiliary API request failed after retries: {last_error}"
         ) from last_error
 
     def extract_text(self, response: dict[str, Any]) -> str:
@@ -233,7 +230,7 @@ class GenAIChatClient:
 class PatientProfileMapperAgent:
     def __init__(
         self,
-        kb: CardiologyKnowledgeBase,
+        kb: HepatobiliaryKnowledgeBase,
         api_client: GenAIChatClient | None = None,
     ) -> None:
         self.kb = kb
@@ -256,10 +253,12 @@ class PatientProfileMapperAgent:
             "urgency": None,
             "vitals": {},
             "labs": {},
-            "ecg_summary": None,
-            "echo_summary": None,
             "imaging_summary": None,
+            "pathology_summary": None,
+            "drainage_status": None,
+            "infection_status": None,
             "bleeding_status": None,
+            "liver_function": None,
             "postop_context": None,
             "raw_input": raw_patient,
         }
@@ -275,10 +274,7 @@ class PatientProfileMapperAgent:
     def build_case_record(self, raw_patient: dict[str, Any]) -> dict[str, Any]:
         normalized = self.normalize_patient_input(raw_patient)
         kb_matches = self.match_patient_to_kb(normalized)
-        return {
-            "normalized_profile": normalized,
-            "kb_matches": kb_matches,
-        }
+        return {"normalized_profile": normalized, "kb_matches": kb_matches}
 
     def build_case_record_from_text(self, raw_patient_text: str) -> dict[str, Any]:
         structured = self.call_patient_structuring_api(raw_patient_text)
@@ -295,19 +291,19 @@ class PatientProfileMapperAgent:
         }
 
     def match_patient_to_kb(self, normalized_patient: dict[str, Any]) -> dict[str, Any]:
-        from kb_retriever import KnowledgeRetriever
+        from hbp_kb_retriever import KnowledgeRetriever
 
-        retriever = KnowledgeRetriever(self.kb)
-        return retriever.retrieve(normalized_patient)
+        return KnowledgeRetriever(self.kb).retrieve(normalized_patient)
 
     def call_patient_structuring_api(self, raw_patient_text: str) -> dict[str, Any]:
         prompt = (
-            "You are a cardiovascular clinical structuring assistant.\n"
+            "You are a hepatobiliary-pancreatic surgery clinical structuring assistant.\n"
             "Convert the patient description into a JSON object only.\n"
             "Use these keys when possible: "
             "age, sex, weight_kg, height_cm, chief_complaint, symptoms, diagnosis_hint, "
             "procedure_name, procedure_site, comorbidities, medications, allergies, urgency, "
-            "vitals, labs, ecg_summary, echo_summary, imaging_summary, bleeding_status, postop_context.\n"
+            "vitals, labs, imaging_summary, pathology_summary, drainage_status, infection_status, "
+            "bleeding_status, liver_function, postop_context.\n"
             "Rules:\n"
             "- Output valid JSON only.\n"
             "- symptoms, comorbidities, medications and allergies must be arrays.\n"
@@ -316,18 +312,14 @@ class PatientProfileMapperAgent:
             f"Patient text:\n{raw_patient_text}"
         )
         config = MODEL_CONFIGS[TASK_MODEL_SELECTION["patient_structuring"]]
-        response = self.api_client.chat_json(config, prompt)
-        return self.api_client.extract_json(response)
+        return self.api_client.extract_json(self.api_client.chat_json(config, prompt))
 
-    def call_medical_entity_linking_api(
-        self,
-        normalized_patient: dict[str, Any],
-    ) -> dict[str, Any]:
+    def call_medical_entity_linking_api(self, normalized_patient: dict[str, Any]) -> dict[str, Any]:
         prompt = (
-            "You are a cardiology entity normalization assistant.\n"
-            "Normalize the following patient data to database-friendly cardiovascular concepts.\n"
+            "You are a hepatobiliary-pancreatic surgery entity normalization assistant.\n"
+            "Normalize the following patient data to database-friendly HBP concepts.\n"
             "Return JSON only with keys:\n"
-            "normalized_terms, syndrome_keywords, symptom_keywords, ecg_keywords, imaging_keywords, "
+            "normalized_terms, syndrome_keywords, symptom_keywords, imaging_keywords, "
             "procedure_keywords, risk_keywords, medication_keywords.\n\n"
             f"Patient JSON:\n{json.dumps(normalized_patient, ensure_ascii=False, indent=2)}"
         )
@@ -335,14 +327,10 @@ class PatientProfileMapperAgent:
         response = self.api_client.chat_json(config, prompt)
         return self._normalize_entity_linking_output(self.api_client.extract_json(response))
 
-    def call_plan_ranking_api(
-        self,
-        normalized_patient: dict[str, Any],
-        kb_matches: dict[str, Any],
-    ) -> dict[str, Any]:
+    def call_plan_ranking_api(self, normalized_patient: dict[str, Any], kb_matches: dict[str, Any]) -> dict[str, Any]:
         prompt = (
-            "You are a cardiology decision-support ranking assistant.\n"
-            "Given the normalized patient profile and candidate cardiovascular plans, rank the plans.\n"
+            "You are a hepatobiliary-pancreatic surgery decision-support ranking assistant.\n"
+            "Given the normalized patient profile and candidate hepatobiliary plans, rank the plans.\n"
             "Return JSON only with keys:\n"
             "ranked_plan_ids, top_choice, reasons, caution_points.\n\n"
             "Normalized patient:\n"
@@ -351,14 +339,9 @@ class PatientProfileMapperAgent:
             f"{json.dumps(kb_matches, ensure_ascii=False, indent=2)}"
         )
         config = MODEL_CONFIGS[TASK_MODEL_SELECTION["plan_ranking"]]
-        response = self.api_client.chat_json(config, prompt)
-        return self.api_client.extract_json(response)
+        return self.api_client.extract_json(self.api_client.chat_json(config, prompt))
 
-    def _find_first_matching_value(
-        self,
-        raw_patient: dict[str, Any],
-        aliases: list[str],
-    ) -> Any | None:
+    def _find_first_matching_value(self, raw_patient: dict[str, Any], aliases: list[str]) -> Any | None:
         for alias in aliases:
             if alias in raw_patient:
                 return raw_patient[alias]
@@ -380,18 +363,17 @@ class PatientProfileMapperAgent:
         return [str(value).strip()]
 
     def _normalize_entity_linking_output(self, payload: dict[str, Any]) -> dict[str, Any]:
-        expected_list_keys = [
+        keys = [
             "normalized_terms",
             "syndrome_keywords",
             "symptom_keywords",
-            "ecg_keywords",
             "imaging_keywords",
             "procedure_keywords",
             "risk_keywords",
             "medication_keywords",
         ]
         normalized = dict(payload)
-        for key in expected_list_keys:
+        for key in keys:
             normalized[key] = self._normalize_text_list(payload.get(key))
         return normalized
 
@@ -415,23 +397,22 @@ class PatientProfileMapperAgent:
 
 
 if __name__ == "__main__":
-    kb = CardiologyKnowledgeBase()
+    kb = HepatobiliaryKnowledgeBase()
     agent = PatientProfileMapperAgent(kb)
-
     raw_patient = {
-        "年龄": 68,
+        "年龄": 63,
         "性别": "男",
-        "主诉": "胸痛 2 小时",
-        "症状": ["胸痛", "出汗"],
-        "基础疾病": ["高血压", "糖尿病"],
-        "用药史": ["阿司匹林"],
-        "心电图": "下壁导联 ST 段抬高",
+        "主诉": "发热伴黄疸 2 天",
+        "症状": ["右上腹痛", "寒战", "黄疸"],
+        "诊断提示": "急性胆管炎，胆总管结石可能",
+        "基础疾病": ["2 型糖尿病", "高血压"],
+        "生命体征": {"BP": "88/54 mmHg", "HR": 118, "T": "39.1C"},
+        "化验": {"TBil": "96 umol/L", "WBC": "18.2e9/L", "乳酸": "3.5 mmol/L"},
+        "影像摘要": "MRCP 提示胆总管下段结石并胆道扩张",
         "急诊": "急诊",
     }
-
     print("Knowledge Base Summary")
     print(json.dumps(kb.summary(), ensure_ascii=False, indent=2))
-
     print("\nCase Mapping Result")
     print(json.dumps(agent.build_case_record(raw_patient), ensure_ascii=False, indent=2))
 
