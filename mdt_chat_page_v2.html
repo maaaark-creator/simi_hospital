@@ -1549,18 +1549,21 @@
       liveProcessTraceHost = processTraceContainer;
       renderLiveProcessTrace();
 
+      const useApiForMdt = document.getElementById("api_mdt").checked;
+      const useApiForSpecialists = document.getElementById("api_specialists").checked;
+      const useApiForFinal = document.getElementById("api_final").checked;
       const payload = {
         message,
         session_id: activeSessionId,
-        use_api_for_mdt: document.getElementById("api_mdt").checked,
-        use_api_for_specialists: document.getElementById("api_specialists").checked,
-        use_api_for_final: document.getElementById("api_final").checked,
+        use_api_for_mdt: useApiForMdt,
+        use_api_for_specialists: useApiForSpecialists,
+        use_api_for_final: useApiForFinal,
         use_plan_agent_followup: document.getElementById("plan_followup").checked,
-        use_api_for_plan_agent: document.getElementById("api_final").checked,
-        use_api_for_structuring: true,
-        use_api_for_entity_linking: true,
+        use_api_for_plan_agent: useApiForFinal,
+        use_api_for_structuring: useApiForMdt || useApiForSpecialists || useApiForFinal,
+        use_api_for_entity_linking: useApiForSpecialists,
         use_mdt_for_uncertainty: true,
-        use_api_for_clarification: true,
+        use_api_for_clarification: useApiForSpecialists,
       };
 
       try {
