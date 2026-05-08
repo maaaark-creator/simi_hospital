@@ -5,6 +5,7 @@
 # independent orthopedics branch and renamed to `patient_mapper_agent.py`.
 
 import json
+import sys
 import re
 import socket
 import ssl
@@ -14,43 +15,43 @@ from pathlib import Path
 from typing import Any
 from urllib import error, request
 
+_LLM_HELPER_ROOT = Path(__file__).resolve().parent.parent
+if str(_LLM_HELPER_ROOT) not in sys.path:
+    sys.path.insert(0, str(_LLM_HELPER_ROOT))
+
+from llm_gateway import DEFAULT_LLM_GATEWAY_URL, build_auth_headers, get_llm_model_id
+
 
 KB_PATH = Path(__file__).with_name("orthopaedics_kb.json")
-GENAI_API_URL = "https://genaiapi.shanghaitech.edu.cn/api/v1/start"
+GENAI_API_URL = DEFAULT_LLM_GATEWAY_URL
 
 
 @dataclass(frozen=True)
 class ModelConfig:
     name: str
     model: str
-    api_key: str
 
 
 MODEL_CONFIGS = {
     "gpt_5_2": ModelConfig(
-        name="GPT-5.2",
-        model="GPT-5.2",
-        api_key="bb336cff66f54e7a9d6f48b3dba97657",
+        name="gpt-4o",
+        model=get_llm_model_id("gpt_5_2", "gpt-4o"),
     ),
     "deepseek_v3_2": ModelConfig(
-        name="deepseek-v3.2",
-        model="deepseek-v3:671b",
-        api_key="277149ebe53440a190ee02bd66673cd1",
+        name="deepseek-chat",
+        model=get_llm_model_id("deepseek_r1", "deepseek-chat"),
     ),
     "deepseek_r1": ModelConfig(
-        name="deepseek-r1",
-        model="deepseek-r1:671b",
-        api_key="e693397f5e1e41259f8e3bef4e502ca4",
+        name="deepseek-chat",
+        model=get_llm_model_id("deepseek_r1", "deepseek-chat"),
     ),
     "qwen3": ModelConfig(
-        name="Qwen3",
-        model="qwen-instruct",
-        api_key="791e88f506f441ba8185adb3a8a9f98a",
+        name="qwen-max",
+        model=get_llm_model_id("qwen3", "qwen-max"),
     ),
     "qwen3_vl": ModelConfig(
-        name="Qwen3-vl",
-        model="qwen2.5-vl-instruct",
-        api_key="7cbf678f86e24121864883fd950e3449",
+        name="qwen-vl-max",
+        model=get_llm_model_id("qwen3_vl", "qwen-vl-max"),
     ),
 }
 
@@ -174,7 +175,7 @@ class GenAIChatClient:
             data=json.dumps(payload).encode("utf-8"),
             headers={
                 "accept": "application/json",
-                "Authorization": f"Bearer {config.api_key}",
+                **build_auth_headers(),
                 "Content-Type": "application/json",
             },
             method="POST",
@@ -197,7 +198,7 @@ class GenAIChatClient:
     def extract_text(self, response: dict[str, Any]) -> str:
         choices = response.get("choices", [])
         if not choices:
-            raise ValueError("API response does not contain choices.")
+            raise ValueError(f"API response does not contain choices. Response excerpt: {json.dumps(response, ensure_ascii=False)[:500]}")
         message = choices[0].get("message", {})
         content = message.get("content")
         if isinstance(content, str):
@@ -633,3 +634,5 @@ if __name__ == "__main__":
     print(json.dumps(kb.summary(), ensure_ascii=False, indent=2))
     print("\nCase Mapping Result")
     print(json.dumps(agent.build_case_record(raw_patient), ensure_ascii=False, indent=2))
+
+

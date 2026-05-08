@@ -2,6 +2,7 @@
 
 from concurrent.futures import ThreadPoolExecutor
 import json
+import sys
 import re
 import socket
 import ssl
@@ -11,25 +12,29 @@ from pathlib import Path
 from typing import Any, Callable
 from urllib import error, request
 
+_LLM_HELPER_ROOT = Path(__file__).resolve().parent.parent
+if str(_LLM_HELPER_ROOT) not in sys.path:
+    sys.path.insert(0, str(_LLM_HELPER_ROOT))
+
+from llm_gateway import DEFAULT_LLM_GATEWAY_URL, build_auth_headers, get_llm_model_id
+
 from mdt_kb_retriever import MDTKnowledgeRetriever
 from mdt_patient_mapper_agent import MDTCallMapper
 
 
-GENAI_API_URL = "https://genaiapi.shanghaitech.edu.cn/api/v1/start"
+GENAI_API_URL = DEFAULT_LLM_GATEWAY_URL
 
 
 @dataclass(frozen=True)
 class ModelConfig:
     name: str
     model: str
-    api_key: str
 
 
 MODEL_CONFIGS = {
     "gpt_5_2": ModelConfig(
-        name="GPT-5.2",
-        model="GPT-5.2",
-        api_key="bb336cff66f54e7a9d6f48b3dba97657",
+        name="gpt-4o",
+        model=get_llm_model_id("gpt_5_2", "gpt-4o"),
     ),
 }
 
@@ -65,7 +70,7 @@ class SharedGenAIChatClient:
             data=json.dumps(payload).encode("utf-8"),
             headers={
                 "accept": "application/json",
-                "Authorization": f"Bearer {config.api_key}",
+                **build_auth_headers(),
                 "Content-Type": "application/json",
             },
             method="POST",
@@ -87,7 +92,7 @@ class SharedGenAIChatClient:
     def extract_text(self, response: dict[str, Any]) -> str:
         choices = response.get("choices", [])
         if not choices:
-            raise ValueError("API response does not contain choices.")
+            raise ValueError(f"API response does not contain choices. Response excerpt: {json.dumps(response, ensure_ascii=False)[:500]}")
         message = choices[0].get("message", {})
         content = message.get("content")
         if isinstance(content, str):
@@ -290,3 +295,5 @@ class MDTCallAgent:
         payload = self.api_client.extract_json(response)
         payload.setdefault("tasks", [])
         return payload
+
+
