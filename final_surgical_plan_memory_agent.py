@@ -75,7 +75,7 @@ class FinalSurgicalPlanMemoryAgent:
         session_id: str,
         supplemental_info: str | dict[str, Any] | None = None,
         use_api: bool = True,
-        model_key: str = "gpt_5_2",
+        model_key: str = "deepseek_v3_2",
     ) -> dict[str, Any]:
         if supplemental_info is not None:
             self.append_supplement(session_id, supplemental_info)
@@ -85,7 +85,7 @@ class FinalSurgicalPlanMemoryAgent:
         self,
         session_id: str,
         use_api: bool = True,
-        model_key: str = "gpt_5_2",
+        model_key: str = "deepseek_v3_2",
     ) -> dict[str, Any]:
         session = self._get_session(session_id)
         final_recommendation = self._extract_final_recommendation(session.base_mdt_output)

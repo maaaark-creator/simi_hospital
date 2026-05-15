@@ -2,6 +2,7 @@
 
 from concurrent.futures import ThreadPoolExecutor
 import json
+import os
 import re
 import socket
 import ssl
@@ -13,23 +14,26 @@ from urllib import error, request
 
 from mdt_kb_retriever import MDTKnowledgeRetriever
 from mdt_patient_mapper_agent import MDTCallMapper
+from llm_runtime import get_api_key_for_model_key, get_gateway_url
 
 
-GENAI_API_URL = "https://genaiapi.shanghaitech.edu.cn/api/v1/start"
+GENAI_API_URL = get_gateway_url()
 
 
 @dataclass(frozen=True)
 class ModelConfig:
     name: str
     model: str
-    api_key: str
 
 
 MODEL_CONFIGS = {
     "gpt_5_2": ModelConfig(
-        name="GPT-5.2",
-        model="GPT-5.2",
-        api_key="bb336cff66f54e7a9d6f48b3dba97657",
+        name="deepseek-v3:671b",
+        model="deepseek-v3:671b",
+    ),
+    "deepseek_v3_2": ModelConfig(
+        name="deepseek-v3:671b",
+        model="deepseek-v3:671b",
     ),
 }
 
@@ -37,8 +41,9 @@ MAX_PARALLEL_WORKERS = 4
 
 
 class SharedGenAIChatClient:
-    def __init__(self, api_url: str = GENAI_API_URL) -> None:
+    def __init__(self, api_url: str = GENAI_API_URL, api_key: str | None = None) -> None:
         self.api_url = api_url
+        self.api_key = str(api_key or "").strip()
 
     def chat_json(
         self,
@@ -46,6 +51,9 @@ class SharedGenAIChatClient:
         prompt: str,
         temperature: float = 0.0,
     ) -> dict[str, Any]:
+        api_key = self.api_key or get_api_key_for_model_key("deepseek_v3_2")
+        if not api_key:
+            raise ValueError("Missing DeepSeek API key environment variable for MDT_Call.")
         payload = {
             "model": config.model,
             "messages": [
@@ -65,7 +73,7 @@ class SharedGenAIChatClient:
             data=json.dumps(payload).encode("utf-8"),
             headers={
                 "accept": "application/json",
-                "Authorization": f"Bearer {config.api_key}",
+                "Authorization": f"Bearer {api_key}",
                 "Content-Type": "application/json",
             },
             method="POST",
@@ -76,6 +84,15 @@ class SharedGenAIChatClient:
             try:
                 with request.urlopen(req, timeout=90) as resp:
                     return json.loads(resp.read().decode("utf-8"))
+            except error.HTTPError as exc:
+                body = exc.read().decode("utf-8", errors="replace")
+                last_error = RuntimeError(
+                    f"MDT call API HTTP {exc.code}: {exc.reason}. Response: {body[:1200]}"
+                )
+                if exc.code == 429 and attempt < 2:
+                    time.sleep(1.5 * (attempt + 1))
+                    continue
+                break
             except (error.URLError, ssl.SSLError, TimeoutError, socket.timeout) as exc:
                 last_error = exc
                 if attempt == 2:
@@ -87,7 +104,14 @@ class SharedGenAIChatClient:
     def extract_text(self, response: dict[str, Any]) -> str:
         choices = response.get("choices", [])
         if not choices:
-            raise ValueError("API response does not contain choices.")
+            error_payload = response.get("error")
+            if isinstance(error_payload, dict):
+                code = str(error_payload.get("code") or "").strip()
+                message = str(error_payload.get("message") or error_payload).strip()
+                raise ValueError(
+                    f"API response does not contain choices. error_code={code or 'unknown'} message={message}"
+                )
+            raise ValueError(f"API response does not contain choices. keys={list(response.keys())[:8]}")
         message = choices[0].get("message", {})
         content = message.get("content")
         if isinstance(content, str):

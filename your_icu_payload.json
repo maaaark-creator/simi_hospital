@@ -1,0 +1,36 @@
+{
+  "admission_id": "ICU-ADM-NS-0001",
+  "patient_id": "P-NS-0001",
+  "bed_id": "ICU-BED-07",
+  "updated_at": "2026-05-15T10:30:00+08:00",
+  "current_vitals": {
+    "heart_rate": 84,
+    "mean_arterial_pressure": 113,
+    "systolic_bp": 156,
+    "diastolic_bp": 92,
+    "respiratory_rate": 18,
+    "temperature": 36.8,
+    "spo2": 98,
+    "gcs": 15,
+    "glucose_mmol_l": 9.8
+  },
+  "active_problems": [
+    "right_frontoparietal_mass_lesion",
+    "increased_intracranial_pressure",
+    "left_sided_weakness",
+    "perioperative_hypertension",
+    "type_2_diabetes"
+  ],
+  "active_risks": [
+    "neurologic_deterioration_risk: critical",
+    "intracranial_hypertension_risk: critical",
+    "perioperative_hemodynamic_instability_risk: warning"
+  ],
+  "latest_interventions": [
+    "brain_mri_completed",
+    "preoperative_fasting_8h_confirmed",
+    "airway_assessment_mallampati_ii",
+    "neurosurgery_consult_requested"
+  ],
+  "care_phase": "unstable"
+}

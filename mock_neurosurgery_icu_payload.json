@@ -1,0 +1,52 @@
+{
+  "admission_id": "ADM-NS-20260515-001",
+  "patient_id": "PAT-NS-00058",
+  "bed_id": "ICU-A-07",
+  "updated_at": "2026-05-15T14:20:00+08:00",
+  "care_phase": "optimize",
+  "current_vitals": {
+    "blood_pressure": "156/92 mmHg",
+    "heart_rate": "84 bpm",
+    "respiratory_rate": "18/min",
+    "spo2": "98%",
+    "temperature": "36.8 C",
+    "glucose": "9.8 mmol/L"
+  },
+  "active_problems": [
+    "男性，58岁，近2周进行性头痛，伴恶心、左侧肢体无力，近3天症状加重并出现步态不稳",
+    "MRI提示右额顶叶约4.2 cm肿瘤样占位，周围脑水肿明显，并伴轻度中线左移",
+    "当前考虑右额顶叶占位性病变，高级别胶质瘤可能，伴颅内压增高",
+    "神经系统查体：神志清，左上肢肌力4级，左下肢肌力4级",
+    "拟行开颅肿瘤切除术，ASA III级"
+  ],
+  "active_risks": [
+    "颅内压增高，围术期存在脑疝风险",
+    "高血压病史10年，当前血压偏高",
+    "2型糖尿病病史5年，围术期血糖控制需优化",
+    "神经功能缺损正在进展，延迟手术可能导致症状恶化"
+  ],
+  "latest_interventions": [
+    "已完成头颅MRI和CT评估，CT未见急性脑出血",
+    "已完成基础实验室检查：Hb 132 g/L，PLT 248e9/L，Cr 78 umol/L",
+    "已禁食8小时，气道评估 Mallampati II级，张口度可",
+    "长期用药包括缬沙坦和二甲双胍",
+    "已申请神经外科、麻醉科、心内科MDT会诊评估围术期方案"
+  ],
+  "history": {
+    "past_medical_history": [
+      "高血压10年",
+      "2型糖尿病5年"
+    ],
+    "long_term_medications": [
+      "缬沙坦",
+      "二甲双胍"
+    ]
+  },
+  "labs": {
+    "hemoglobin": "132 g/L",
+    "platelet": "248e9/L",
+    "creatinine": "78 umol/L",
+    "glucose": "9.8 mmol/L"
+  },
+  "planned_procedure": "右额顶叶占位开颅肿瘤切除术"
+}

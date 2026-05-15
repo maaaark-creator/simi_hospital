@@ -1,0 +1,169 @@
+{
+  "admission_id": "ADM-NS-20260515-001",
+  "patient_id": "PAT-NS-00058",
+  "bed_id": "ICU-A-07",
+  "updated_at": "2026-05-15T08:15:24.940639+00:00",
+  "current_vitals": {
+    "blood_pressure": "156/92 mmHg",
+    "heart_rate": "84 bpm",
+    "respiratory_rate": "18/min",
+    "spo2": "98%",
+    "temperature": "36.8 C",
+    "glucose": "9.8 mmol/L"
+  },
+  "active_problems": [
+    {
+      "problem": "男性，58岁，近2周进行性头痛，伴恶心、左侧肢体无力，近3天症状加重并出现步态不稳",
+      "status": "active"
+    },
+    {
+      "problem": "MRI提示右额顶叶约4.2 cm肿瘤样占位，周围脑水肿明显，并伴轻度中线左移",
+      "status": "active"
+    },
+    {
+      "problem": "当前考虑右额顶叶占位性病变，高级别胶质瘤可能，伴颅内压增高",
+      "status": "active"
+    },
+    {
+      "problem": "神经系统查体：神志清，左上肢肌力4级，左下肢肌力4级",
+      "status": "active"
+    },
+    {
+      "problem": "拟行开颅肿瘤切除术，ASA III级",
+      "status": "active"
+    },
+    {
+      "problem": "术前血压（156/92 mmHg）和血糖（9.8 mmol/L）控制不佳，直接增加术中出血、脑水肿及心血管事件风险。",
+      "status": "active"
+    },
+    {
+      "problem": "缺乏关键术前评估数据：凝血功能、心电图、心脏超声结果未知，无法最终排除手术禁忌。",
+      "status": "active"
+    },
+    {
+      "problem": "肿瘤与运动皮层的精确解剖关系不明，影响术中功能保护的最大化实施。",
+      "status": "active"
+    },
+    {
+      "problem": "肿瘤与中央前回（运动皮层）及锥体束的确切解剖关系未知，影响术中功能保护策略的精确性。",
+      "status": "active"
+    },
+    {
+      "problem": "凝血功能、心脏超声、心电图结果未知，无法最终评估出血风险及心脏对手术的耐受性。",
+      "status": "active"
+    },
+    {
+      "problem": "患者是否存在未明确的阻塞性睡眠呼吸暂停（OSA）、冠心病或其他重要合并症，可能影响麻醉及术后管理。",
+      "status": "active"
+    },
+    {
+      "problem": "患者及家属对手术风险（如永久性神经功能缺损）的理解程度及治疗期望需进一步确认。",
+      "status": "active"
+    },
+    {
+      "problem": "患者体重、身高数据缺失，影响所有药物（包括甘露醇、胰岛素、麻醉药）的精确剂量计算。",
+      "status": "active"
+    }
+  ],
+  "active_risks": [
+    {
+      "risk_type": "颅内压增高，围术期存在脑疝风险",
+      "severity": "critical"
+    },
+    {
+      "risk_type": "高血压病史10年，当前血压偏高",
+      "severity": "low"
+    },
+    {
+      "risk_type": "2型糖尿病病史5年，围术期血糖控制需优化",
+      "severity": "low"
+    },
+    {
+      "risk_type": "神经功能缺损正在进展，延迟手术可能导致症状恶化",
+      "severity": "low"
+    },
+    {
+      "risk_type": "颅内压增高与脑疝风险：肿瘤占位效应明显，围术期血压、体位、麻醉诱导等波动可能诱发急性脑疝。",
+      "severity": "critical"
+    },
+    {
+      "risk_type": "高血压与脑灌注波动：术前血压控制不佳，术中易发生剧烈波动，影响脑灌注压，可能导致脑缺血或加重脑水肿。",
+      "severity": "warning"
+    },
+    {
+      "risk_type": "高血糖与感染风险：术前血糖升高，围术期应激可能加重高血糖，增加感染风险并影响伤口愈合。",
+      "severity": "warning"
+    },
+    {
+      "risk_type": "神经功能缺损进展：手术紧迫性高，延迟手术或术中损伤可能导致左侧肢体运动功能永久性恶化。",
+      "severity": "low"
+    },
+    {
+      "risk_type": "心血管事件风险：合并高血压、糖尿病，且缺乏完整心脏评估，围术期发生心肌缺血、心律失常等风险增加。",
+      "severity": "warning"
+    }
+  ],
+  "latest_interventions": [
+    {
+      "id": "mdt_intv_c397469182e0",
+      "intervention_type": "mdt_action",
+      "description": "已完成头颅MRI和CT评估，CT未见急性脑出血",
+      "timestamp": "2026-05-15T08:15:24.940134+00:00"
+    },
+    {
+      "id": "mdt_intv_833b534b27bd",
+      "intervention_type": "mdt_action",
+      "description": "已完成基础实验室检查：Hb 132 g/L，PLT 248e9/L，Cr 78 umol/L",
+      "timestamp": "2026-05-15T08:15:24.940169+00:00"
+    },
+    {
+      "id": "mdt_intv_4e115ddd605a",
+      "intervention_type": "mdt_action",
+      "description": "已禁食8小时，气道评估 Mallampati II级，张口度可",
+      "timestamp": "2026-05-15T08:15:24.940175+00:00"
+    },
+    {
+      "id": "mdt_intv_1f507f24a2a3",
+      "intervention_type": "mdt_action",
+      "description": "长期用药包括缬沙坦和二甲双胍",
+      "timestamp": "2026-05-15T08:15:24.940179+00:00"
+    },
+    {
+      "id": "mdt_intv_eec68ab5310e",
+      "intervention_type": "mdt_action",
+      "description": "已申请神经外科、麻醉科、心内科MDT会诊评估围术期方案",
+      "timestamp": "2026-05-15T08:15:24.940183+00:00"
+    },
+    {
+      "id": "mdt_intv_9891f8ecdc2d",
+      "intervention_type": "mdt_recommendation",
+      "description": "术前：立即静脉使用地塞米松减轻脑水肿；启动静脉降压（尼卡地平）及胰岛素泵控制血糖；完善凝血、心电图、心脏超声、MRI增强+fMRI/DTI检查；完成知情同意。",
+      "timestamp": "2026-05-15T08:15:24.940254+00:00"
+    },
+    {
+      "id": "mdt_intv_2ec3a559a291",
+      "intervention_type": "mdt_recommendation",
+      "description": "术中：采用全身麻醉气管插管，丙泊酚/瑞芬太尼TIVA维持，头高位，有创动脉压监测；根据fMRI/DTI结果，使用术中神经电生理监测（MEP/SSEP）指导肿瘤切除，保护运动功能区；备好甘露醇应对脑膨出。",
+      "timestamp": "2026-05-15T08:15:24.940258+00:00"
+    },
+    {
+      "id": "mdt_intv_a13e7d7112d3",
+      "intervention_type": "mdt_recommendation",
+      "description": "术后：转入NICU监护，持续监测生命体征、神经功能、血糖及电解质；预防性使用抗癫痫药物；逐步过渡到口服降压及降糖药；安排术后早期MRI评估肿瘤切除程度及有无出血、水肿。",
+      "timestamp": "2026-05-15T08:15:24.940262+00:00"
+    },
+    {
+      "id": "mdt_intv_cadfd313d155",
+      "intervention_type": "mdt_recommendation",
+      "description": "限期行右额顶叶开颅肿瘤切除术，手术指征明确。",
+      "timestamp": "2026-05-15T08:15:24.940265+00:00"
+    },
+    {
+      "id": "mdt_intv_4d885e361ae8",
+      "intervention_type": "mdt_recommendation",
+      "description": "术前紧急优化：立即启动地塞米松减轻脑水肿；强化降压（目标<160/100 mmHg）及降糖治疗（目标血糖6-10 mmol/L）。",
+      "timestamp": "2026-05-15T08:15:24.940269+00:00"
+    }
+  ],
+  "care_phase": "critical"
+}

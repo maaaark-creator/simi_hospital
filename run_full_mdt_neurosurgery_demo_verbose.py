@@ -31,10 +31,20 @@ def build_parser() -> argparse.ArgumentParser:
         description="Run the full MDT neurosurgery demo with progress logs."
     )
     parser.add_argument(
+        "--input",
+        type=Path,
+        help="Optional path to an ICU JSON payload or ICU envelope JSON file.",
+    )
+    parser.add_argument(
         "--output",
         type=Path,
         default=PROJECT_ROOT / "full_mdt_neurosurgery_demo_output.json",
         help="Path to save the final JSON output.",
+    )
+    parser.add_argument(
+        "--full-output",
+        action="store_true",
+        help="Include verbose workflow sections, raw workflow payload, and trace events.",
     )
     return parser
 
@@ -67,6 +77,13 @@ def build_demo_patient_text_clean() -> str:
         "神经系统查体：神志清，左上肢肌力4级，左下肢肌力4级。"
         "ASA III级，已禁食8小时，气道评估 Mallampati II级，张口度可。"
     )
+
+
+def load_patient_input(path: Path) -> dict[str, Any] | str:
+    content = path.read_text(encoding="utf-8").strip()
+    if path.suffix.lower() == ".json":
+        return json.loads(content)
+    return content
 
 
 def _attach_step_logging(obj: Any, method_name: str, label: str) -> None:
@@ -188,11 +205,31 @@ def build_workflow_sections(result: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def build_final_output(
+    patient: dict[str, Any] | str,
+    result: dict[str, Any],
+    full_output: bool,
+) -> dict[str, Any]:
+    payload = result.get("mdt_output_envelope", {}).get("payload", {})
+    if not full_output:
+        return payload if isinstance(payload, dict) else {}
+
+    return {
+        "demo_patient": patient,
+        "mdt_input_envelope": result.get("mdt_input_envelope"),
+        "mdt_output_envelope": result.get("mdt_output_envelope"),
+        "workflow_result": build_printable_summary(result),
+        "workflow_sections": build_workflow_sections(result),
+        "workflow_raw": result,
+        "trace_events": TRACE_EVENTS,
+    }
+
+
 def main() -> None:
     configure_console_encoding()
     args = build_parser().parse_args()
 
-    patient = build_demo_patient_text_clean()
+    patient = load_patient_input(args.input) if args.input else build_demo_patient_text_clean()
     print("[INFO ] Building HeadDoctorAgent...", flush=True)
     agent = HeadDoctorAgent()
     attach_progress_logging(agent)
@@ -216,13 +253,11 @@ def main() -> None:
         traceback.print_exc()
         raise
 
-    output = {
-        "demo_patient": patient,
-        "workflow_result": build_printable_summary(result),
-        "workflow_sections": build_workflow_sections(result),
-        "workflow_raw": result,
-        "trace_events": TRACE_EVENTS,
-    }
+    output = build_final_output(
+        patient=patient,
+        result=result,
+        full_output=args.full_output,
+    )
     args.output.write_text(
         json.dumps(output, ensure_ascii=False, indent=2),
         encoding="utf-8",

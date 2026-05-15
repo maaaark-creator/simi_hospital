@@ -3,15 +3,20 @@
 from concurrent.futures import ThreadPoolExecutor
 import importlib.util
 import json
+import os
 import re
 import socket
 import ssl
 import sys
 import time
+import uuid
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 from urllib import error, request
+
+from llm_runtime import get_api_key_for_model_key, get_default_model_key, get_gateway_url
 
 
 CURRENT_DIR = Path(__file__).resolve().parent
@@ -19,36 +24,39 @@ PROJECT_ROOT = CURRENT_DIR.parent
 MDT_CALL_DIR = PROJECT_ROOT / "mdt_call"
 
 
-GENAI_API_URL = "https://genaiapi.shanghaitech.edu.cn/api/v1/start"
+GENAI_API_URL = get_gateway_url()
 
 
 @dataclass(frozen=True)
 class ModelConfig:
     name: str
     model: str
-    api_key: str
 
 
 MODEL_CONFIGS = {
     "gpt_5_2": ModelConfig(
-        name="GPT-5.2",
-        model="GPT-5.2",
-        api_key="bb336cff66f54e7a9d6f48b3dba97657",
+        name="deepseek-v3:671b",
+        model="deepseek-v3:671b",
     ),
     "qwen3": ModelConfig(
-        name="Qwen3",
+        name="qwen-instruct",
         model="qwen-instruct",
-        api_key="791e88f506f441ba8185adb3a8a9f98a",
     ),
     "deepseek_r1": ModelConfig(
-        name="deepseek-r1",
+        name="deepseek-r1:671b",
         model="deepseek-r1:671b",
-        api_key="e693397f5e1e41259f8e3bef4e502ca4",
+    ),
+    "deepseek_v3_2": ModelConfig(
+        name="deepseek-v3:671b",
+        model="deepseek-v3:671b",
     ),
 }
 
-HEAD_DOCTOR_REVIEW_MODELS = ("gpt_5_2", "qwen3", "deepseek_r1")
-HEAD_DOCTOR_REVIEW_MAX_WORKERS = 3
+HEAD_DOCTOR_REVIEW_MODELS = ("deepseek_v3_2", "qwen3")
+HEAD_DOCTOR_REVIEW_MAX_WORKERS = 2
+DEFAULT_MDT_AGENT_NAME = "head_doctor_mdt"
+DEFAULT_MDT_SCHEMA_VERSION = "mdt.output.v1"
+DEFAULT_MDT_INPUT_SCHEMA_VERSION = "mdt.input.v1"
 
 
 SPECIALTY_SPECS = {
@@ -111,8 +119,9 @@ SPECIALTY_SPECS = {
 
 
 class SharedGenAIChatClient:
-    def __init__(self, api_url: str = GENAI_API_URL) -> None:
+    def __init__(self, api_url: str = GENAI_API_URL, api_key: str | None = None) -> None:
         self.api_url = api_url
+        self.api_key = str(api_key or "").strip()
 
     def chat_json(
         self,
@@ -120,6 +129,11 @@ class SharedGenAIChatClient:
         prompt: str,
         temperature: float = 0.0,
     ) -> dict[str, Any]:
+        api_key = self.api_key or get_api_key_for_model_key(
+            next((key for key, candidate in MODEL_CONFIGS.items() if candidate == config), get_default_model_key())
+        )
+        if not api_key:
+            raise ValueError("Missing DeepSeek API key environment variable for the selected model.")
         payload = {
             "model": config.model,
             "messages": [
@@ -139,7 +153,7 @@ class SharedGenAIChatClient:
             data=json.dumps(payload).encode("utf-8"),
             headers={
                 "accept": "application/json",
-                "Authorization": f"Bearer {config.api_key}",
+                "Authorization": f"Bearer {api_key}",
                 "Content-Type": "application/json",
             },
             method="POST",
@@ -150,6 +164,15 @@ class SharedGenAIChatClient:
             try:
                 with request.urlopen(req, timeout=90) as resp:
                     return json.loads(resp.read().decode("utf-8"))
+            except error.HTTPError as exc:
+                body = exc.read().decode("utf-8", errors="replace")
+                last_error = RuntimeError(
+                    f"Head doctor API HTTP {exc.code}: {exc.reason}. Response: {body[:1200]}"
+                )
+                if exc.code == 429 and attempt < 2:
+                    time.sleep(1.5 * (attempt + 1))
+                    continue
+                break
             except (error.URLError, ssl.SSLError, TimeoutError, socket.timeout) as exc:
                 last_error = exc
                 if attempt == 2:
@@ -161,7 +184,14 @@ class SharedGenAIChatClient:
     def extract_text(self, response: dict[str, Any]) -> str:
         choices = response.get("choices", [])
         if not choices:
-            raise ValueError("API response does not contain choices.")
+            error_payload = response.get("error")
+            if isinstance(error_payload, dict):
+                code = str(error_payload.get("code") or "").strip()
+                message = str(error_payload.get("message") or error_payload).strip()
+                raise ValueError(
+                    f"API response does not contain choices. error_code={code or 'unknown'} message={message}"
+                )
+            raise ValueError(f"API response does not contain choices. keys={list(response.keys())[:8]}")
         message = choices[0].get("message", {})
         content = message.get("content")
         if isinstance(content, str):
@@ -272,24 +302,28 @@ class SpecialtyAgentAdapter:
         use_api_for_retrieval: bool,
         use_api_for_decision: bool,
     ) -> dict[str, Any]:
+        warnings: list[str] = []
         structured_patient, normalized_patient = self._prepare_patient(
             patient_input,
             use_api_for_structuring=use_api_for_structuring,
+            warnings=warnings,
         )
-        entity_linking = (
-            self.mapper.call_medical_entity_linking_api(normalized_patient)
-            if use_api_for_entity_linking
-            else {}
+        entity_linking = self._call_entity_linking_with_fallback(
+            normalized_patient,
+            use_api_for_entity_linking=use_api_for_entity_linking,
+            warnings=warnings,
         )
         retrieval_result = self._retrieve_case(
             normalized_patient,
             entity_linking,
             use_api_for_retrieval=use_api_for_retrieval,
+            warnings=warnings,
         )
-        decision_result = (
-            self.decision_agent.decide_with_api(normalized_patient, retrieval_result)
-            if use_api_for_decision
-            else self.decision_agent.decide(normalized_patient, retrieval_result)
+        decision_result = self._decide_case(
+            normalized_patient,
+            retrieval_result,
+            use_api_for_decision=use_api_for_decision,
+            warnings=warnings,
         )
         return {
             "specialty": self.specialty_id,
@@ -299,6 +333,7 @@ class SpecialtyAgentAdapter:
             "entity_linking": entity_linking,
             "retrieval_result": retrieval_result,
             "decision_result": decision_result,
+            "warnings": warnings,
         }
 
     def clarify_case(
@@ -382,20 +417,63 @@ class SpecialtyAgentAdapter:
         normalized_patient: dict[str, Any],
         entity_linking: dict[str, Any],
         use_api_for_retrieval: bool,
+        warnings: list[str] | None = None,
     ) -> dict[str, Any]:
         if use_api_for_retrieval and hasattr(self.retriever, "retrieve_with_api"):
-            return self.retriever.retrieve_with_api(normalized_patient, entity_linking)
+            try:
+                return self.retriever.retrieve_with_api(normalized_patient, entity_linking)
+            except Exception as exc:
+                if warnings is not None:
+                    warnings.append(f"{self.specialty_id} retrieval_api_fallback: {exc}")
         return self.retriever.retrieve(normalized_patient, entity_linking)
+
+    def _call_entity_linking_with_fallback(
+        self,
+        normalized_patient: dict[str, Any],
+        *,
+        use_api_for_entity_linking: bool,
+        warnings: list[str] | None = None,
+    ) -> dict[str, Any]:
+        if not use_api_for_entity_linking:
+            return {}
+        try:
+            return self.mapper.call_medical_entity_linking_api(normalized_patient)
+        except Exception as exc:
+            if warnings is not None:
+                warnings.append(f"{self.specialty_id} entity_linking_api_fallback: {exc}")
+            return {}
+
+    def _decide_case(
+        self,
+        normalized_patient: dict[str, Any],
+        retrieval_result: dict[str, Any],
+        *,
+        use_api_for_decision: bool,
+        warnings: list[str] | None = None,
+    ) -> dict[str, Any]:
+        if use_api_for_decision:
+            try:
+                return self.decision_agent.decide_with_api(normalized_patient, retrieval_result)
+            except Exception as exc:
+                if warnings is not None:
+                    warnings.append(f"{self.specialty_id} decision_api_fallback: {exc}")
+        return self.decision_agent.decide(normalized_patient, retrieval_result)
 
     def _prepare_patient(
         self,
         patient_input: dict[str, Any] | str,
         use_api_for_structuring: bool,
+        warnings: list[str] | None = None,
     ) -> tuple[dict[str, Any], dict[str, Any]]:
         if isinstance(patient_input, dict):
             structured_patient = patient_input
         elif use_api_for_structuring:
-            structured_patient = self.mapper.call_patient_structuring_api(patient_input)
+            try:
+                structured_patient = self.mapper.call_patient_structuring_api(patient_input)
+            except Exception as exc:
+                if warnings is not None:
+                    warnings.append(f"{self.specialty_id} structuring_api_fallback: {exc}")
+                structured_patient = {"raw_text": patient_input}
         else:
             structured_patient = {"raw_text": patient_input}
         normalized = self.mapper.normalize_patient_input(structured_patient)
@@ -430,8 +508,10 @@ class HeadDoctorAgent:
         use_api_for_clarification: bool = True,
         use_api_for_final: bool = True,
     ) -> dict[str, Any]:
+        envelope_context = self._prepare_mdt_envelope_context(patient_input)
+        normalized_patient_input = envelope_context["normalized_patient_input"]
         initial_triage = self.mdt_call_agent.coordinate_initial_triage(
-            patient_input=patient_input,
+            patient_input=normalized_patient_input,
             specialist_callback=lambda specialty_id, case_input: self._dispatch_initial_specialty_eval(
                 specialty_id=specialty_id,
                 patient_input=case_input,
@@ -447,7 +527,7 @@ class HeadDoctorAgent:
         mdt_follow_up = None
         if use_mdt_for_uncertainty and uncertainty_review["unresolved_items"]:
             mdt_follow_up = self.mdt_call_agent.coordinate_follow_up(
-                patient_input=patient_input,
+                patient_input=normalized_patient_input,
                 specialty_opinions=specialty_opinions,
                 unresolved_items=uncertainty_review["unresolved_items"],
                 specialist_callback=self._dispatch_clarification,
@@ -457,28 +537,717 @@ class HeadDoctorAgent:
 
         final_recommendation = (
             self._integrate_with_api(
-                patient_input=patient_input,
+                patient_input=normalized_patient_input,
                 specialty_opinions=specialty_opinions,
                 uncertainty_review=uncertainty_review,
                 mdt_follow_up=mdt_follow_up,
             )
             if use_api_for_final
             else self._integrate_locally(
-                patient_input=patient_input,
+                patient_input=normalized_patient_input,
                 specialty_opinions=specialty_opinions,
                 uncertainty_review=uncertainty_review,
                 mdt_follow_up=mdt_follow_up,
             )
         )
 
-        return {
-            "patient_input": patient_input,
+        workflow_result = {
+            "patient_input": normalized_patient_input,
+            "patient_input_original": envelope_context["original_patient_input"],
+            "patient_input_payload": envelope_context["input_payload"],
+            "mdt_input_envelope": envelope_context["input_envelope"],
             "initial_triage": initial_triage,
             "specialty_opinions": specialty_opinions,
             "uncertainty_review": uncertainty_review,
             "mdt_follow_up": mdt_follow_up,
             "head_doctor_recommendation": final_recommendation,
         }
+        workflow_result["mdt_output_envelope"] = self._build_mdt_output_envelope(
+            input_envelope=envelope_context["input_envelope"],
+            final_recommendation=final_recommendation,
+        )
+        return workflow_result
+
+    def _prepare_mdt_envelope_context(
+        self,
+        patient_input: dict[str, Any] | str,
+    ) -> dict[str, Any]:
+        if self._looks_like_agent_envelope(patient_input):
+            input_envelope = dict(patient_input)
+            payload = input_envelope.get("payload")
+            normalized_patient_input = self._coerce_patient_input_for_mdt(payload)
+            return {
+                "original_patient_input": patient_input,
+                "input_envelope": self._normalize_input_envelope(input_envelope),
+                "input_payload": payload,
+                "normalized_patient_input": normalized_patient_input,
+            }
+
+        payload = self._normalize_payload_for_mdt(patient_input)
+        envelope = self._normalize_input_envelope(
+            {
+                "payload": payload,
+                "output_type": "mdt_case_intake",
+                "agent_name": "mdt_intake",
+                "schema_version": DEFAULT_MDT_INPUT_SCHEMA_VERSION,
+            }
+        )
+        return {
+            "original_patient_input": patient_input,
+            "input_envelope": envelope,
+            "input_payload": payload,
+            "normalized_patient_input": self._coerce_patient_input_for_mdt(payload),
+        }
+
+    def _looks_like_agent_envelope(self, value: Any) -> bool:
+        if not isinstance(value, dict):
+            return False
+        required_keys = {
+            "output_id",
+            "admission_id",
+            "patient_id",
+            "bed_id",
+            "agent_name",
+            "schema_version",
+            "output_type",
+            "generated_at",
+            "payload",
+        }
+        return required_keys.issubset(set(value.keys()))
+
+    def _normalize_input_envelope(self, envelope: dict[str, Any]) -> dict[str, Any]:
+        normalized = dict(envelope)
+        payload = self._normalize_payload_for_mdt(normalized.get("payload"))
+        payload_dict = payload if isinstance(payload, dict) else {}
+        normalized["output_id"] = str(normalized.get("output_id") or self._new_mdt_id("in"))
+        normalized["admission_id"] = str(
+            normalized.get("admission_id") or payload_dict.get("admission_id") or self._new_mdt_id("adm")
+        )
+        normalized["patient_id"] = str(
+            normalized.get("patient_id") or payload_dict.get("patient_id") or self._new_mdt_id("pat")
+        )
+        normalized["bed_id"] = str(
+            normalized.get("bed_id") or payload_dict.get("bed_id") or self._new_mdt_id("bed")
+        )
+        normalized["agent_name"] = str(normalized.get("agent_name") or "mdt_intake")
+        normalized["schema_version"] = str(normalized.get("schema_version") or DEFAULT_MDT_INPUT_SCHEMA_VERSION)
+        normalized["output_type"] = str(normalized.get("output_type") or "mdt_case_intake")
+        normalized["generated_at"] = self._normalize_timestamp(
+            normalized.get("generated_at") or payload_dict.get("updated_at")
+        )
+        normalized["payload"] = payload
+        return normalized
+
+    def _normalize_payload_for_mdt(self, payload: Any) -> dict[str, Any] | str:
+        if isinstance(payload, dict):
+            return payload
+        if isinstance(payload, str):
+            return payload
+        if payload is None:
+            return {}
+        return {"raw_input": payload}
+
+    def _looks_like_icu_state_payload(self, payload: Any) -> bool:
+        if not isinstance(payload, dict):
+            return False
+        required_keys = {
+            "admission_id",
+            "patient_id",
+            "bed_id",
+            "current_vitals",
+            "active_problems",
+            "active_risks",
+            "latest_interventions",
+            "care_phase",
+        }
+        return required_keys.issubset(set(payload.keys()))
+
+    def _coerce_patient_input_for_mdt(self, payload: Any) -> dict[str, Any] | str:
+        normalized = self._normalize_payload_for_mdt(payload)
+        if self._looks_like_icu_state_payload(normalized):
+            return self._build_case_text_from_icu_payload(normalized)
+        return normalized
+
+    def _build_case_text_from_icu_payload(self, payload: dict[str, Any]) -> str:
+        vitals_text = self._format_named_mapping(payload.get("current_vitals"))
+        problems = self._string_list_from_any(payload.get("active_problems"))
+        risks = self._string_list_from_any(payload.get("active_risks"))
+        interventions = self._string_list_from_any(payload.get("latest_interventions"))
+        segments = [
+            f"ICU患者交接：admission_id={payload.get('admission_id')}，patient_id={payload.get('patient_id')}，bed_id={payload.get('bed_id')}。",
+            f"当前状态更新时间：{payload.get('updated_at') or '未提供'}。",
+            f"当前 care_phase：{payload.get('care_phase') or 'unstable'}。",
+        ]
+        if vitals_text:
+            segments.append(f"当前生命体征：{vitals_text}。")
+        if problems:
+            segments.append("当前活动问题：" + "；".join(problems) + "。")
+        if risks:
+            segments.append("当前活动风险：" + "；".join(risks) + "。")
+        if interventions:
+            segments.append("最新干预与处理：" + "；".join(interventions) + "。")
+        segments.append("请基于以上ICU当前状态信息进行MDT评估，并给出围术期会诊建议。")
+        return "".join(segments)
+
+    def _build_mdt_output_envelope(
+        self,
+        input_envelope: dict[str, Any],
+        final_recommendation: dict[str, Any],
+    ) -> dict[str, Any]:
+        standardized_payload = self._build_standardized_mdt_payload(
+            input_envelope=input_envelope,
+            final_recommendation=final_recommendation,
+        )
+        return {
+            "output_id": self._new_mdt_id("out"),
+            "admission_id": str(input_envelope.get("admission_id") or self._new_mdt_id("adm")),
+            "patient_id": str(input_envelope.get("patient_id") or self._new_mdt_id("pat")),
+            "bed_id": str(input_envelope.get("bed_id") or self._new_mdt_id("bed")),
+            "agent_name": DEFAULT_MDT_AGENT_NAME,
+            "schema_version": DEFAULT_MDT_SCHEMA_VERSION,
+            "output_type": "mdt_recommendation_ready",
+            "generated_at": self._utc_now_iso(),
+            "payload": standardized_payload,
+        }
+
+    def _build_standardized_mdt_payload(
+        self,
+        input_envelope: dict[str, Any],
+        final_recommendation: dict[str, Any],
+    ) -> dict[str, Any]:
+        input_payload = input_envelope.get("payload")
+        current_vitals = self._extract_current_vitals_from_input(input_payload)
+        input_active_problems = self._extract_problem_items_from_input(input_payload)
+        input_active_risks = self._extract_risk_items_from_input(input_payload)
+        input_latest_interventions = self._extract_intervention_items_from_input(input_payload)
+        active_problems = self._merge_problem_items(
+            input_active_problems,
+            self._build_problem_items_from_recommendation(final_recommendation),
+        )
+        active_risks = self._merge_risk_items(
+            input_active_risks,
+            self._build_risk_items_from_recommendation(final_recommendation),
+        )
+        latest_interventions = self._merge_intervention_items(
+            input_latest_interventions,
+            self._build_intervention_items_from_recommendation(final_recommendation),
+        )
+        active_problems = self._filter_icu_problem_objects(active_problems)
+        active_risks = self._filter_icu_risk_objects(active_risks)
+        latest_interventions = self._filter_icu_intervention_objects(latest_interventions)
+        care_phase = self._merge_care_phase(
+            self._extract_input_care_phase(input_payload),
+            self._map_current_status_to_care_phase(
+            final_recommendation.get("current_status_level"),
+            active_risks=[self._risk_item_to_text(item) for item in active_risks],
+        )
+        )
+        return {
+            "admission_id": str(input_envelope.get("admission_id") or self._new_mdt_id("adm")),
+            "patient_id": str(input_envelope.get("patient_id") or self._new_mdt_id("pat")),
+            "bed_id": str(input_envelope.get("bed_id") or self._new_mdt_id("bed")),
+            "updated_at": self._utc_now_iso(),
+            "current_vitals": current_vitals,
+            "active_problems": active_problems,
+            "active_risks": active_risks,
+            "latest_interventions": latest_interventions,
+            "care_phase": care_phase,
+        }
+
+    def _extract_current_vitals_from_input(self, payload: Any) -> dict[str, Any]:
+        if not isinstance(payload, dict):
+            return {}
+        for key in ("current_vitals", "vitals", "生命体征"):
+            value = payload.get(key)
+            if isinstance(value, dict):
+                return value
+        return {}
+
+    def _extract_input_care_phase(self, payload: Any) -> str | None:
+        if not isinstance(payload, dict):
+            return None
+        value = str(payload.get("care_phase") or "").strip().lower()
+        return value or None
+
+    def _extract_string_list_field(self, payload: Any, field_name: str) -> list[str]:
+        if not isinstance(payload, dict):
+            return []
+        return self._string_list_from_any(payload.get(field_name))
+
+    def _extract_problem_items_from_input(self, payload: Any) -> list[dict[str, Any]]:
+        if not isinstance(payload, dict):
+            return []
+        return self._coerce_problem_items(payload.get("active_problems"))
+
+    def _extract_risk_items_from_input(self, payload: Any) -> list[dict[str, Any]]:
+        if not isinstance(payload, dict):
+            return []
+        return self._coerce_risk_items(payload.get("active_risks"))
+
+    def _extract_intervention_items_from_input(self, payload: Any) -> list[dict[str, Any]]:
+        if not isinstance(payload, dict):
+            return []
+        return self._coerce_intervention_items(payload.get("latest_interventions"))
+
+    def _string_list_from_any(self, value: Any) -> list[str]:
+        if isinstance(value, list):
+            items: list[str] = []
+            for item in value:
+                if isinstance(item, str):
+                    text = item.strip()
+                    if text:
+                        items.append(text)
+                elif isinstance(item, dict):
+                    items.extend(self._dict_item_to_strings(item))
+                elif item is not None:
+                    items.append(str(item).strip())
+            return self._merge_string_lists(items)
+        if isinstance(value, dict):
+            return self._dict_item_to_strings(value)
+        if isinstance(value, str) and value.strip():
+            return [value.strip()]
+        return []
+
+    def _dict_item_to_strings(self, item: dict[str, Any]) -> list[str]:
+        candidates = []
+        for keys in (
+            ("problem", "status"),
+            ("risk_type", "severity"),
+            ("intervention_type", "description"),
+            ("title", "detail"),
+            ("name", "value"),
+        ):
+            primary = str(item.get(keys[0]) or "").strip()
+            secondary = str(item.get(keys[1]) or "").strip()
+            if primary and secondary:
+                candidates.append(f"{primary}: {secondary}")
+            elif primary:
+                candidates.append(primary)
+        if candidates:
+            return candidates
+        return [json.dumps(item, ensure_ascii=False, sort_keys=True)]
+
+    def _format_named_mapping(self, value: Any) -> str:
+        if not isinstance(value, dict):
+            return ""
+        parts = [f"{k}={v}" for k, v in value.items() if v is not None and str(v).strip()]
+        return "，".join(parts)
+
+    def _merge_string_lists(self, *groups: list[str]) -> list[str]:
+        merged: list[str] = []
+        seen: set[str] = set()
+        for group in groups:
+            for item in group:
+                text = str(item).strip()
+                if not text:
+                    continue
+                key = text.casefold()
+                if key in seen:
+                    continue
+                seen.add(key)
+                merged.append(text)
+        return merged
+
+    def _coerce_risk_items(self, value: Any) -> list[dict[str, Any]]:
+        if not isinstance(value, list):
+            return []
+        items: list[dict[str, Any]] = []
+        for raw in value:
+            if isinstance(raw, dict):
+                risk_type = str(raw.get("risk_type") or raw.get("type") or "").strip()
+                severity = str(raw.get("severity") or "").strip().lower() or "warning"
+                if not risk_type:
+                    continue
+                items.append(
+                    {
+                        "risk_type": risk_type,
+                        "severity": severity if severity in ("low", "warning", "critical") else "warning",
+                    }
+                )
+            elif isinstance(raw, str) and raw.strip():
+                items.append(
+                    {
+                        "risk_type": raw.strip(),
+                        "severity": self._infer_risk_severity(raw),
+                    }
+                )
+        return items
+
+    def _coerce_problem_items(self, value: Any) -> list[dict[str, Any]]:
+        if not isinstance(value, list):
+            return []
+        items: list[dict[str, Any]] = []
+        for raw in value:
+            if isinstance(raw, dict):
+                problem = str(
+                    raw.get("problem")
+                    or raw.get("name")
+                    or raw.get("title")
+                    or raw.get("problem_type")
+                    or ""
+                ).strip()
+                status = str(raw.get("status") or "active").strip().lower() or "active"
+                if not problem:
+                    continue
+                items.append(
+                    {
+                        "problem": problem,
+                        "status": status,
+                    }
+                )
+            elif isinstance(raw, str) and raw.strip():
+                items.append(
+                    {
+                        "problem": raw.strip(),
+                        "status": "active",
+                    }
+                )
+        return items
+
+    def _coerce_intervention_items(self, value: Any) -> list[dict[str, Any]]:
+        if not isinstance(value, list):
+            return []
+        items: list[dict[str, Any]] = []
+        for raw in value:
+            if isinstance(raw, dict):
+                intervention_type = str(raw.get("intervention_type") or raw.get("type") or "").strip()
+                description = str(raw.get("description") or raw.get("detail") or "").strip()
+                timestamp = str(raw.get("timestamp") or raw.get("updated_at") or "").strip()
+                if not intervention_type and not description:
+                    continue
+                items.append(
+                    {
+                        "id": str(raw.get("id") or self._new_mdt_id("intv")),
+                        "intervention_type": intervention_type or "mdt_action",
+                        "description": description or intervention_type,
+                        "timestamp": timestamp or self._utc_now_iso(),
+                    }
+                )
+            elif isinstance(raw, str) and raw.strip():
+                items.append(
+                    {
+                        "id": self._new_mdt_id("intv"),
+                        "intervention_type": "mdt_action",
+                        "description": raw.strip(),
+                        "timestamp": self._utc_now_iso(),
+                    }
+                )
+        return items
+
+    def _build_risk_items_from_recommendation(
+        self,
+        final_recommendation: dict[str, Any],
+    ) -> list[dict[str, Any]]:
+        return [
+            {
+                "risk_type": text,
+                "severity": self._infer_risk_severity(text),
+            }
+            for text in self._string_list(final_recommendation.get("key_risks"))
+            if text.strip()
+        ]
+
+    def _build_problem_items_from_recommendation(
+        self,
+        final_recommendation: dict[str, Any],
+    ) -> list[dict[str, Any]]:
+        merged_problems = self._merge_string_lists(
+            self._string_list(final_recommendation.get("core_constraints")),
+            self._string_list(final_recommendation.get("unresolved_issues")),
+        )
+        return [
+            {
+                "problem": text,
+                "status": "active",
+            }
+            for text in merged_problems
+            if text.strip()
+        ]
+
+    def _build_intervention_items_from_recommendation(
+        self,
+        final_recommendation: dict[str, Any],
+    ) -> list[dict[str, Any]]:
+        merged_steps = self._merge_string_lists(
+            self._string_list(final_recommendation.get("specific_surgical_plan")),
+            self._string_list(final_recommendation.get("final_plan")),
+            self._string_list(final_recommendation.get("next_steps")),
+        )
+        return [
+            {
+                "id": self._new_mdt_id("intv"),
+                "intervention_type": "mdt_recommendation",
+                "description": text,
+                "timestamp": self._utc_now_iso(),
+            }
+            for text in merged_steps
+            if text.strip()
+        ]
+
+    def _merge_problem_items(self, *groups: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        merged: list[dict[str, Any]] = []
+        seen: set[tuple[str, str]] = set()
+        for group in groups:
+            for item in group:
+                problem = str(item.get("problem") or "").strip()
+                status = str(item.get("status") or "active").strip().lower() or "active"
+                if not problem:
+                    continue
+                key = (problem.casefold(), status)
+                if key in seen:
+                    continue
+                seen.add(key)
+                merged.append(
+                    {
+                        "problem": problem,
+                        "status": status,
+                    }
+                )
+        return merged
+
+    def _merge_risk_items(self, *groups: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        merged: list[dict[str, Any]] = []
+        seen: set[tuple[str, str]] = set()
+        for group in groups:
+            for item in group:
+                risk_type = str(item.get("risk_type") or "").strip()
+                severity = str(item.get("severity") or "warning").strip().lower()
+                if not risk_type:
+                    continue
+                key = (risk_type.casefold(), severity)
+                if key in seen:
+                    continue
+                seen.add(key)
+                merged.append(
+                    {
+                        "risk_type": risk_type,
+                        "severity": severity if severity in ("low", "warning", "critical") else "warning",
+                    }
+                )
+        return merged
+
+    def _merge_intervention_items(self, *groups: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        merged: list[dict[str, Any]] = []
+        seen: set[str] = set()
+        for group in groups:
+            for item in group:
+                intervention_type = str(item.get("intervention_type") or "").strip()
+                description = str(item.get("description") or "").strip()
+                if not intervention_type and not description:
+                    continue
+                key = f"{intervention_type.casefold()}|{description.casefold()}"
+                if key in seen:
+                    continue
+                seen.add(key)
+                merged.append(
+                    {
+                        "id": str(item.get("id") or self._new_mdt_id("intv")),
+                        "intervention_type": intervention_type or "mdt_action",
+                        "description": description or intervention_type,
+                        "timestamp": str(item.get("timestamp") or self._utc_now_iso()),
+                    }
+                )
+        return merged[:10]
+
+    def _filter_icu_problem_objects(self, items: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        cleaned: list[dict[str, Any]] = []
+        for item in items:
+            problem = str(item.get("problem") or "").strip()
+            if not problem or not self._is_valid_icu_problem_item(problem):
+                continue
+            cleaned.append(
+                {
+                    "problem": problem,
+                    "status": str(item.get("status") or "active").strip().lower() or "active",
+                }
+            )
+        return self._merge_problem_items(cleaned)
+
+    def _filter_icu_risk_objects(self, items: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        cleaned: list[dict[str, Any]] = []
+        for item in items:
+            normalized = self._normalize_icu_risk_item(str(item.get("risk_type") or "").strip())
+            if not normalized or not self._is_valid_icu_risk_item(normalized):
+                continue
+            cleaned.append(
+                {
+                    "risk_type": normalized,
+                    "severity": str(item.get("severity") or "warning").strip().lower() or "warning",
+                }
+            )
+        return self._merge_risk_items(cleaned)
+
+    def _filter_icu_intervention_objects(self, items: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        cleaned: list[dict[str, Any]] = []
+        for item in items:
+            description = self._normalize_icu_intervention_item(str(item.get("description") or "").strip())
+            if not description or not self._is_valid_icu_intervention_item(description):
+                continue
+            cleaned.append(
+                {
+                    "id": str(item.get("id") or self._new_mdt_id("intv")),
+                    "intervention_type": str(item.get("intervention_type") or "mdt_action").strip() or "mdt_action",
+                    "description": description,
+                    "timestamp": str(item.get("timestamp") or self._utc_now_iso()),
+                }
+            )
+        return self._merge_intervention_items(cleaned)
+
+    def _infer_risk_severity(self, text: Any) -> str:
+        normalized = str(text or "").strip().lower()
+        if any(token in normalized for token in ("critical", "禁忌", "脑疝", "休克", "呼吸衰竭")):
+            return "critical"
+        if any(token in normalized for token in ("high", "增高", "风险", "不佳", "异常")):
+            return "warning"
+        return "low"
+
+    def _risk_item_to_text(self, item: dict[str, Any]) -> str:
+        risk_type = str(item.get("risk_type") or "").strip()
+        severity = str(item.get("severity") or "").strip().lower()
+        if risk_type and severity:
+            return f"{risk_type} ({severity})"
+        return risk_type
+
+    def _filter_icu_problem_items(self, items: list[str]) -> list[str]:
+        return [item for item in items if self._is_valid_icu_problem_item(item)]
+
+    def _filter_icu_risk_items(self, items: list[str]) -> list[str]:
+        cleaned: list[str] = []
+        for item in items:
+            normalized = self._normalize_icu_risk_item(item)
+            if normalized and self._is_valid_icu_risk_item(normalized):
+                cleaned.append(normalized)
+        return self._merge_string_lists(cleaned)
+
+    def _filter_icu_intervention_items(self, items: list[str]) -> list[str]:
+        cleaned: list[str] = []
+        for item in items:
+            normalized = self._normalize_icu_intervention_item(item)
+            if normalized and self._is_valid_icu_intervention_item(normalized):
+                cleaned.append(normalized)
+        return self._merge_string_lists(cleaned)
+
+    def _is_valid_icu_problem_item(self, text: str) -> bool:
+        normalized = str(text).strip()
+        if not normalized:
+            return False
+        reject_terms = (
+            "缺少",
+            "未返回",
+            "建议重试",
+            "评估结果暂不可用",
+            "超时或接口失败",
+            "请进一步说明",
+            "需要补充",
+            "补充关键信息",
+            "confidence",
+            "error",
+            "review_model",
+            "trigger:",
+            "owner:",
+            "步骤",
+        )
+        lowered = normalized.lower()
+        return not any(term in normalized or term in lowered for term in reject_terms)
+
+    def _is_valid_icu_risk_item(self, text: str) -> bool:
+        normalized = str(text).strip()
+        if not normalized:
+            return False
+        reject_terms = (
+            "缺少",
+            "未返回",
+            "建议重试",
+            "评估结果暂不可用",
+            "超时或接口失败",
+            "请进一步说明",
+            "补充关键信息",
+            "error",
+            "review_model",
+            "trigger:",
+            "owner:",
+            "步骤",
+        )
+        lowered = normalized.lower()
+        return not any(term in normalized or term in lowered for term in reject_terms)
+
+    def _normalize_icu_risk_item(self, text: str) -> str:
+        normalized = str(text).strip()
+        replacements = (
+            ("恶性高热触发药规避", "malignant_hyperthermia_risk"),
+            ("残余肌松复核", "residual_neuromuscular_blockade_risk"),
+            ("舒更葡糖适用范围复核", "neuromuscular_reversal_risk"),
+            ("新斯的明需配伍抗胆碱药", "anticholinergic_cotherapy_risk"),
+            ("高钾风险时规避琥珀胆碱", "hyperkalemia_succinylcholine_risk"),
+            ("缺少完整气道评估", ""),
+            ("缺少心电图摘要", ""),
+        )
+        for source, target in replacements:
+            if source == normalized:
+                return target
+        return normalized
+
+    def _is_valid_icu_intervention_item(self, text: str) -> bool:
+        normalized = str(text).strip()
+        if not normalized:
+            return False
+        reject_terms = (
+            "缺少",
+            "未返回",
+            "建议重试",
+            "评估结果暂不可用",
+            "超时或接口失败",
+            "请进一步说明",
+            "confidence",
+            "error",
+            "review_model",
+        )
+        lowered = normalized.lower()
+        return not any(term in normalized or term in lowered for term in reject_terms)
+
+    def _normalize_icu_intervention_item(self, text: str) -> str:
+        normalized = str(text).strip()
+        normalized = re.sub(r"^步骤\d+[：:]\s*", "", normalized)
+        replacements = (
+            ("麻醉科建议优先按 全身麻醉-气管插管 路径处理", "general_anesthesia_intubation_preferred"),
+            ("心内科建议优先按 ACS 初始评估路径 路径处理", "cardiovascular_risk_pathway_activated"),
+        )
+        for source, target in replacements:
+            if source == normalized:
+                return target
+        return normalized.strip()
+
+    def _map_current_status_to_care_phase(
+        self,
+        current_status_level: Any,
+        *,
+        active_risks: list[str],
+    ) -> str:
+        level = str(current_status_level or "").strip().upper()
+        if level == "READY":
+            return "stable"
+        if level == "CONTRAINDICATED":
+            return "critical"
+        if any("禁忌" in item or "critical" in item.lower() for item in active_risks):
+            return "critical"
+        return "unstable"
+
+    def _merge_care_phase(self, input_phase: str | None, derived_phase: str) -> str:
+        phase_rank = {"stable": 0, "unstable": 1, "critical": 2}
+        input_rank = phase_rank.get(str(input_phase or "").lower(), -1)
+        derived_rank = phase_rank.get(derived_phase, 1)
+        return input_phase if input_rank >= derived_rank and input_phase else derived_phase
+
+    def _new_mdt_id(self, prefix: str) -> str:
+        return f"mdt_{prefix}_{uuid.uuid4().hex[:12]}"
+
+    def _utc_now_iso(self) -> str:
+        return datetime.now(timezone.utc).isoformat()
+
+    def _normalize_timestamp(self, value: Any) -> str:
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+        return self._utc_now_iso()
 
     def _dispatch_initial_specialty_eval(
         self,
@@ -620,7 +1389,7 @@ class HeadDoctorAgent:
                 uncertainty_review=uncertainty_review,
                 mdt_follow_up=mdt_follow_up,
             )
-            local_review["case_summary"] = str(local_review.get("case_summary") or "") + " 多模型复核均失败，已回退本地整合。"
+            local_review["case_summary"] = str(local_review.get("case_summary") or "") + " Qwen/DeepSeek 复核均失败，已回退本地整合。"
             local_review["model_panel_opinions"] = panel_opinions
             return self._format_final_recommendation(
                 specialty_opinions=specialty_opinions,
@@ -644,7 +1413,7 @@ class HeadDoctorAgent:
                 mdt_follow_up=mdt_follow_up,
                 panel_opinions=panel_opinions,
             )
-        merged_review["model_panel_opinions"] = panel_opinions
+        merged_review["model_panel_opinions"] = [dict(item) for item in panel_opinions]
         return self._format_final_recommendation(
             specialty_opinions=specialty_opinions,
             uncertainty_review=uncertainty_review,
@@ -697,9 +1466,9 @@ class HeadDoctorAgent:
     ) -> dict[str, Any]:
         if "thinking_log" not in final_review:
             final_review["thinking_log"] = (
-                "已统一由 GPT 生成最终结论，详见输出中的 case_summary 和最终方案。"
+                "已统一由 DeepSeek 生成最终结论，详见输出中的 case_summary 和最终方案。"
             )
-        final_review["merged_by"] = final_review.get("merge_model") or final_review.get("review_model") or final_review.get("review_model_key") or "gpt"
+        final_review["merged_by"] = final_review.get("merge_model") or final_review.get("review_model") or final_review.get("review_model_key") or "deepseek_v3_2"
         final_review["specialty_opinions"] = specialty_opinions
         final_review["uncertainty_review"] = uncertainty_review
         final_review["mdt_follow_up"] = mdt_follow_up
@@ -739,9 +1508,9 @@ class HeadDoctorAgent:
             f"mdt_call 二次分诊结果：\n{json.dumps(mdt_follow_up, ensure_ascii=False, indent=2)}\n\n"
             f"各模型审阅结果：\n{json.dumps(panel_opinions, ensure_ascii=False, indent=2)}"
         )
-        response = self.api_client.chat_json(MODEL_CONFIGS["gpt_5_2"], prompt)
+        response = self.api_client.chat_json(MODEL_CONFIGS["deepseek_v3_2"], prompt)
         payload = self.api_client.extract_json(response)
-        payload["merge_model"] = MODEL_CONFIGS["gpt_5_2"].name
+        payload["merge_model"] = MODEL_CONFIGS["deepseek_v3_2"].name
         return payload
 
     def _normalize_current_status_fields(
@@ -873,23 +1642,59 @@ class HeadDoctorAgent:
             return "当前无未解决的关键不确定项，直接整合各专科结论形成最终方案。"
 
         questions = [str(item.get("question") or item.get("reason") or "") for item in unresolved_items]
+        questions = [q for q in questions if q and self._is_clinically_meaningful_uncertainty(q)]
         questions = [q for q in questions if q]
         if mdt_follow_up and mdt_follow_up.get("clarifications"):
             clarifications = []
             for clarification in mdt_follow_up.get("clarifications", []):
                 specialty = clarification.get("specialty") or "相关专科"
                 answer = clarification.get("answer") or "无明确回答"
+                if not self._is_clinically_meaningful_uncertainty(answer):
+                    continue
                 clarifications.append(f"{specialty}：{answer}")
+            if not questions and not clarifications:
+                return "当前无需要展示的关键不确定项，最终方案已基于可用专科结论完成整合。"
+            if questions and clarifications:
+                return (
+                    "先识别以下待澄清项：" + "；".join(questions) +
+                    "。随后通过 MDT 追问获取补充意见，主要结果包括：" + "；".join(clarifications) +
+                    "。最终将这些补充结果纳入判断，形成统一方案。"
+                )
+            if questions:
+                return (
+                    "先识别以下待澄清项：" + "；".join(questions) +
+                    "。随后通过 MDT 追问补充信息，并将结果纳入最终判断。"
+                )
             return (
-                "先识别以下待澄清项：" + "；".join(questions) +
-                "。随后通过 MDT 追问获取补充意见，主要结果包括：" + "；".join(clarifications) +
+                "通过 MDT 追问获取了以下补充意见：" + "；".join(clarifications) +
                 "。最终将这些补充结果纳入判断，形成统一方案。"
             )
 
+        if not questions:
+            return "当前无需要展示的关键不确定项，最终方案仍基于现有专科结论和已有风险提示。"
         return (
             "识别到待澄清项：" + "；".join(questions) +
             "。但未产生 MDT 追问结果，最终方案仍基于现有专科结论和已有风险提示。"
         )
+
+    def _is_clinically_meaningful_uncertainty(self, text: Any) -> bool:
+        normalized = str(text or "").strip()
+        if not normalized:
+            return False
+        reject_terms = (
+            "建议重试",
+            "评估结果暂不可用",
+            "超时或接口失败",
+            "接口失败",
+            "api request failed",
+            "read operation timed out",
+            "当前未返回可用结论",
+            "追问暂未返回",
+            "error",
+            "timeout",
+        )
+        lowered = normalized.lower()
+        return not any(term in normalized or term in lowered for term in reject_terms)
 
     def _synthesize_panel_opinions(
         self,

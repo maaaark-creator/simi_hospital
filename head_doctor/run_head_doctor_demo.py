@@ -103,7 +103,11 @@ def main() -> None:
     )
     print(
         json.dumps(
-            result,
+            {
+                "mdt_input_envelope": result.get("mdt_input_envelope"),
+                "mdt_output_envelope": result.get("mdt_output_envelope"),
+                "workflow": result,
+            },
             ensure_ascii=bool(output_config.get("ensure_ascii", False)),
             indent=int(output_config.get("indent", 2)),
         )

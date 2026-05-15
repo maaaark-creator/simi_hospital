@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 import socket
 import ssl
@@ -9,44 +10,42 @@ from dataclasses import dataclass
 from typing import Any
 from urllib import error, request
 
+from llm_runtime import get_api_key_for_model_key, get_gateway_url
 
-GENAI_API_URL = "https://genaiapi.shanghaitech.edu.cn/api/v1/start"
+
+GENAI_API_URL = get_gateway_url()
 
 
 @dataclass(frozen=True)
 class ModelConfig:
     name: str
     model: str
-    api_key: str
 
 
 MODEL_CONFIGS = {
     "gpt_5_2": ModelConfig(
-        name="GPT-5.2",
-        model="GPT-5.2",
-        api_key="bb336cff66f54e7a9d6f48b3dba97657",
+        name="deepseek-v3:671b",
+        model="deepseek-v3:671b",
     ),
     "deepseek_v3_2": ModelConfig(
-        name="deepseek-v3.2",
+        name="deepseek-v3:671b",
         model="deepseek-v3:671b",
-        api_key="277149ebe53440a190ee02bd66673cd1",
     ),
     "deepseek_r1": ModelConfig(
-        name="deepseek-r1",
+        name="deepseek-r1:671b",
         model="deepseek-r1:671b",
-        api_key="e693397f5e1e41259f8e3bef4e502ca4",
     ),
     "qwen3": ModelConfig(
-        name="Qwen3",
-        model="qwen-instruct",
-        api_key="791e88f506f441ba8185adb3a8a9f98a",
+        name="deepseek-v3:671b",
+        model="deepseek-v3:671b",
     ),
 }
 
 
 class GenAIChatClient:
-    def __init__(self, api_url: str = GENAI_API_URL) -> None:
+    def __init__(self, api_url: str = GENAI_API_URL, api_key: str | None = None) -> None:
         self.api_url = api_url
+        self.api_key = str(api_key or "").strip()
 
     def chat_json(
         self,
@@ -54,6 +53,11 @@ class GenAIChatClient:
         prompt: str,
         temperature: float = 0.0,
     ) -> dict[str, Any]:
+        api_key = self.api_key or get_api_key_for_model_key(
+            next((key for key, candidate in MODEL_CONFIGS.items() if candidate == config), "deepseek_v3_2")
+        )
+        if not api_key:
+            raise ValueError("Missing DeepSeek API key environment variable for Neurosurgery.")
         payload = {
             "model": config.model,
             "messages": [
@@ -79,7 +83,7 @@ class GenAIChatClient:
             data=json.dumps(payload).encode("utf-8"),
             headers={
                 "accept": "application/json",
-                "Authorization": f"Bearer {config.api_key}",
+                "Authorization": f"Bearer {api_key}",
                 "Content-Type": "application/json",
             },
             method="POST",
@@ -90,6 +94,15 @@ class GenAIChatClient:
             try:
                 with request.urlopen(req, timeout=60) as resp:
                     return json.loads(resp.read().decode("utf-8"))
+            except error.HTTPError as exc:
+                body = exc.read().decode("utf-8", errors="replace")
+                last_error = RuntimeError(
+                    f"Neurosurgery API HTTP {exc.code}: {exc.reason}. Response: {body[:1200]}"
+                )
+                if exc.code == 429 and attempt < 2:
+                    time.sleep(1.5 * (attempt + 1))
+                    continue
+                break
             except (error.URLError, ssl.SSLError, TimeoutError, socket.timeout) as exc:
                 last_error = exc
                 if attempt == 2:
@@ -103,7 +116,14 @@ class GenAIChatClient:
     def extract_text(self, response: dict[str, Any]) -> str:
         choices = response.get("choices", [])
         if not choices:
-            raise ValueError("API response does not contain choices.")
+            error_payload = response.get("error")
+            if isinstance(error_payload, dict):
+                code = str(error_payload.get("code") or "").strip()
+                message = str(error_payload.get("message") or error_payload).strip()
+                raise ValueError(
+                    f"API response does not contain choices. error_code={code or 'unknown'} message={message}"
+                )
+            raise ValueError(f"API response does not contain choices. keys={list(response.keys())[:8]}")
 
         message = choices[0].get("message", {})
         content = message.get("content")

@@ -20,10 +20,10 @@ DEFAULT_NEUROSURGERY_KB: dict[str, Any] = {
 }
 
 NEUROSURGERY_TASK_MODEL_SELECTION = {
-    "patient_structuring": "gpt_5_2",
-    "entity_linking": "gpt_5_2",
-    "retrieval_reasoning": "gpt_5_2",
-    "final_decision": "gpt_5_2",
+    "patient_structuring": "deepseek_v3_2",
+    "entity_linking": "deepseek_v3_2",
+    "retrieval_reasoning": "deepseek_v3_2",
+    "final_decision": "deepseek_v3_2",
 }
 
 
